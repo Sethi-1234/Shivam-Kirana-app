@@ -1226,8 +1226,52 @@ Thank you.`;
    FIXED SHOPKEEPER
    ========================================= */
 
+
 function openShopkeeper() {
 
+  /* CLOSE EVERYTHING FIRST */
+
+  const cartPanel = document.getElementById("cartPanel");
+  const checkout = document.getElementById("checkout");
+
+  if (cartPanel) {
+    cartPanel.classList.add("hidden");
+  }
+
+  if (checkout) {
+    checkout.classList.add("hidden");
+  }
+
+  /* REMOVE ANY OPEN MODAL STATE */
+
+  document.body.classList.remove("modal-open");
+
+  /* ASK PASSWORD */
+
+  const password = prompt(
+    "Enter shopkeeper password:"
+  );
+
+  if (password !== "1234") {
+    alert("Incorrect password.");
+    return;
+  }
+
+  /* OPEN ONLY SHOPKEEPER */
+
+  const shopkeeper =
+    document.getElementById("shopkeeper");
+
+  if (shopkeeper) {
+    shopkeeper.classList.remove("hidden");
+    shopkeeper.style.display = "grid";
+    shopkeeper.style.zIndex = "1000";
+  }
+
+  /* SHOW PRODUCTS */
+
+  renderAdminProducts();
+}
   // Close cart
   if ($("cartPanel")) {
     $("cartPanel").classList.add("hidden");
@@ -1264,11 +1308,19 @@ function openShopkeeper() {
 
 function closeShopkeeper() {
 
-  $("shopkeeper")
-    .classList
-    .add("hidden");
+  
+function closeShopkeeper() {
 
-}
+  const shopkeeper =
+    document.getElementById("shopkeeper");
+
+  if (shopkeeper) {
+    shopkeeper.classList.add("hidden");
+    shopkeeper.style.display = "none";
+  }
+
+
+
 
 
 /* =========================================
