@@ -1,660 +1,715 @@
+/* =========================================================
+   SHIVAM KIRANA STORE
+   COMPLETE STYLE.CSS
+   ========================================================= */
+
 * {
   box-sizing: border-box;
 }
 
-body {
-  margin: 0;
-  font-family: system-ui, Arial, sans-serif;
-  background: #f7faf7;
-  color: #172018;
+html {
+  scroll-behavior: smooth;
 }
 
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    Arial, sans-serif;
+  background: #f7faf7;
+  color: #172018;
+  line-height: 1.5;
+}
 
-/* HEADER */
+/* =========================================================
+   HEADER
+   ========================================================= */
 
 header {
   position: sticky;
   top: 0;
-  z-index: 10;
-
-  background: white;
-
+  z-index: 100;
+  background: #ffffff;
   border-bottom: 1px solid #e5e7eb;
-
   padding: 10px 5%;
-
   display: flex;
   align-items: center;
   justify-content: space-between;
-
-  gap: 10px;
+  gap: 12px;
 }
 
 .brand {
   display: flex;
   align-items: center;
   gap: 10px;
+  min-width: 0;
 }
 
-.logo {
+.brand span {
+  font-size: 34px;
+}
+
+.brand h1 {
+  font-size: 20px;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.brand small {
+  color: #64748b;
+  font-size: 13px;
+}
+
+/* Logo support */
+.brand img {
   width: 58px;
   height: 58px;
   object-fit: contain;
   border-radius: 50%;
 }
 
-.brand h1 {
-  margin: 0;
-  font-size: 20px;
-}
-
-.brand small {
-  color: #64748b;
-}
-
-
-/* CART */
+/* =========================================================
+   CART BUTTON
+   ========================================================= */
 
 .cart {
   border: 0;
-
   background: #ecfdf5;
   color: #166534;
-
   padding: 10px 14px;
-
   border-radius: 12px;
-
   font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.cart:hover {
+  background: #dcfce7;
 }
 
 .cart b {
   background: #16a34a;
   color: white;
-
   border-radius: 99px;
-
   padding: 2px 7px;
+  margin-left: 4px;
 }
 
+/* =========================================================
+   MAIN
+   ========================================================= */
 
-/* HERO */
+main {
+  width: 100%;
+}
+
+/* =========================================================
+   HERO
+   ========================================================= */
 
 .hero {
-  max-width: 1100px;
-
   margin: 20px auto;
-
+  max-width: 1100px;
   border-radius: 22px;
-
-  padding: 25px;
-
-  background:
-    linear-gradient(
-      135deg,
-      #dcfce7,
-      #fefce8
-    );
-
-  display: flex;
-
-  align-items: center;
-
-  gap: 25px;
-}
-
-.heroLogo {
-  width: 150px;
-  height: 150px;
-
-  object-fit: contain;
-
-  border-radius: 50%;
+  padding: 30px;
+  background: linear-gradient(
+    135deg,
+    #dcfce7,
+    #fef9c3
+  );
 }
 
 .hero h2 {
   margin: 0 0 8px;
-
   font-size: 30px;
 }
 
 .hero p {
+  margin: 0;
   color: #36513b;
 }
 
-.storeStatus {
-  margin-top: 12px;
-
-  font-weight: 700;
-
-  line-height: 1.7;
-}
-
-
-/* QUICK ACTIONS */
-
-.quick-actions {
-  max-width: 1100px;
-
-  margin: 15px auto;
-
-  padding: 0 5%;
-
-  display: grid;
-
-  grid-template-columns:
-    repeat(3, 1fr);
-
-  gap: 10px;
-}
-
-.quick-actions button {
-  border: 0;
-
-  padding: 13px 7px;
-
-  border-radius: 12px;
-
-  background: #ecfdf5;
-
-  color: #166534;
-
-  font-weight: 700;
-
-  cursor: pointer;
-}
-
-
-/* SEARCH */
+/* =========================================================
+   SEARCH
+   ========================================================= */
 
 .search {
   max-width: 1100px;
-
   margin: 0 auto 15px;
-
   background: white;
-
   border: 1px solid #ddd;
-
   border-radius: 14px;
-
   padding: 10px 14px;
 }
 
 .search input {
   border: 0;
-
   outline: 0;
-
   width: 90%;
-
   font-size: 16px;
+  background: transparent;
 }
 
-
-/* CATEGORIES */
+/* =========================================================
+   CATEGORIES
+   ========================================================= */
 
 .chips {
   max-width: 1100px;
-
   margin: auto;
-
   display: flex;
-
   gap: 8px;
-
   overflow-x: auto;
-
   padding: 4px 5% 18px;
+  scrollbar-width: none;
+}
+
+.chips::-webkit-scrollbar {
+  display: none;
 }
 
 .chip {
   border: 1px solid #ddd;
-
   background: white;
-
+  color: #172018;
   border-radius: 99px;
-
   padding: 9px 14px;
-
   white-space: nowrap;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.chip:hover {
+  background: #f0fdf4;
 }
 
 .chip.active {
   background: #16a34a;
-
   color: white;
-
   border-color: #16a34a;
 }
 
+/* =========================================================
+   PRODUCT SECTION
+   ========================================================= */
 
-/* PRODUCTS */
-
-main > section:not(.hero):not(.quick-actions) {
+main > section:not(.hero) {
   max-width: 1100px;
-
-  margin-left: auto;
-  margin-right: auto;
+  margin: auto;
 }
+
+main > section h2 {
+  padding-left: 5%;
+  padding-right: 5%;
+}
+
+/* =========================================================
+   PRODUCT GRID
+   ========================================================= */
 
 .grid {
   display: grid;
-
   grid-template-columns:
-    repeat(
-      auto-fill,
-      minmax(170px, 1fr)
-    );
-
+    repeat(auto-fill, minmax(170px, 1fr));
   gap: 14px;
-
-  padding-bottom: 40px;
+  padding: 0 5% 40px;
 }
+
+/* =========================================================
+   PRODUCT CARD
+   ========================================================= */
 
 .card {
   background: white;
-
   border: 1px solid #e5e7eb;
-
   border-radius: 16px;
-
   padding: 14px;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
 }
 
 .emoji {
   font-size: 44px;
-
   text-align: center;
-
   background: #f8fafc;
-
   border-radius: 12px;
-
   padding: 15px;
+  min-height: 90px;
+  display: grid;
+  place-items: center;
 }
 
 .card h3 {
   margin: 10px 0 4px;
-
   font-size: 16px;
 }
 
 .price {
   font-weight: 800;
+  font-size: 17px;
 }
+
+/* =========================================================
+   ADD TO CART
+   ========================================================= */
 
 .add {
   width: 100%;
-
   margin-top: 10px;
-
-  padding: 9px;
-
+  padding: 10px;
   border: 0;
-
   border-radius: 10px;
-
   background: #16a34a;
-
   color: white;
-
   font-weight: 700;
+  cursor: pointer;
 }
 
+.add:hover {
+  background: #15803d;
+}
 
-/* CART DRAWER */
+/* =========================================================
+   CART DRAWER
+   ========================================================= */
 
 .drawer {
   position: fixed;
-
   right: 0;
   top: 0;
-
   width: min(430px, 100%);
-
   height: 100%;
-
   background: white;
-
-  z-index: 30;
-
-  box-shadow:
-    -10px 0 30px #0002;
-
+  z-index: 500;
+  box-shadow: -10px 0 30px rgba(0, 0, 0, 0.15);
   padding: 20px;
-
-  overflow: auto;
+  overflow-y: auto;
 }
 
 .drawerHead {
   display: flex;
-
+  align-items: center;
   justify-content: space-between;
+  gap: 10px;
 }
 
-.drawerHead button,
-.close {
+.drawerHead h2 {
+  margin: 0;
+}
+
+.drawerHead button {
   border: 0;
-
   background: #eee;
-
   border-radius: 8px;
-
-  padding: 8px;
+  padding: 9px 12px;
+  font-size: 18px;
+  cursor: pointer;
 }
+
+/* =========================================================
+   CART ITEM
+   ========================================================= */
 
 .item {
   display: flex;
-
+  align-items: center;
   justify-content: space-between;
-
   gap: 10px;
-
-  padding: 12px 0;
-
+  padding: 14px 0;
   border-bottom: 1px solid #eee;
+}
+
+.item > div:first-child {
+  min-width: 0;
+}
+
+.qty {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
 }
 
 .qty button {
   border: 1px solid #ddd;
-
   background: white;
-
   border-radius: 6px;
-
-  padding: 3px 8px;
+  padding: 4px 9px;
+  font-size: 16px;
+  cursor: pointer;
 }
+
+.qty button:hover {
+  background: #f0fdf4;
+}
+
+/* =========================================================
+   CART TOTAL
+   ========================================================= */
 
 .total {
   font-size: 20px;
-
   padding: 20px 0;
 }
 
+/* =========================================================
+   PRIMARY BUTTON
+   ========================================================= */
 
-/* MODAL */
+.primary {
+  width: 100%;
+  border: 0;
+  border-radius: 12px;
+  padding: 13px;
+  background: #16a34a;
+  color: #fff;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.primary:hover {
+  background: #15803d;
+}
+
+/* =========================================================
+   MODAL
+   ========================================================= */
 
 .modal {
   position: fixed;
-
   inset: 0;
-
-  background: #0007;
-
-  z-index: 40;
-
+  background: rgba(0, 0, 0, 0.65);
+  z-index: 800;
   display: grid;
-
   place-items: center;
-
   padding: 20px;
+  overflow-y: auto;
 }
+
+/* =========================================================
+   MODAL BOX
+   ========================================================= */
 
 .modalBox {
-  background: white;
-
-  width: min(450px, 100%);
-
-  max-height: 92vh;
-
-  overflow: auto;
-
-  padding: 22px;
-
-  border-radius: 18px;
-
   position: relative;
+  background: white;
+  width: min(500px, 100%);
+  max-height: 92vh;
+  overflow-y: auto;
+  padding: 22px;
+  border-radius: 20px;
+  box-shadow:
+    0 20px 60px rgba(0, 0, 0, 0.25);
 }
+
+.modalBox h2 {
+  margin-top: 0;
+}
+
+.modalBox h3 {
+  margin-bottom: 8px;
+}
+
+/* =========================================================
+   MODAL INPUTS
+   ========================================================= */
 
 .modalBox input,
 .modalBox textarea,
 .modalBox select {
   width: 100%;
-
   padding: 12px;
-
   margin: 7px 0;
-
-  border: 1px solid #ddd;
-
+  border: 1px solid #d1d5db;
   border-radius: 10px;
-
   font: inherit;
+  background: white;
+  color: #172018;
+  outline: none;
+}
+
+.modalBox input:focus,
+.modalBox textarea:focus,
+.modalBox select:focus {
+  border-color: #16a34a;
+  box-shadow:
+    0 0 0 3px rgba(22, 163, 74, 0.12);
 }
 
 .modalBox textarea {
-  height: 90px;
+  min-height: 90px;
+  resize: vertical;
 }
+
+/* =========================================================
+   CLOSE BUTTON
+   ========================================================= */
 
 .close {
   position: absolute;
-
   right: 15px;
   top: 15px;
-}
+  z-index: 9999;
 
-
-/* BUTTONS */
-
-.primary {
-  width: 100%;
+  width: 40px;
+  height: 40px;
 
   border: 0;
+  background: #f1f5f9;
+  color: #111827;
 
-  border-radius: 12px;
+  border-radius: 10px;
 
-  padding: 13px;
+  display: grid;
+  place-items: center;
 
-  background: #16a34a;
+  font-size: 22px;
+  line-height: 1;
 
-  color: white;
+  cursor: pointer;
 
-  font-weight: 800;
+  pointer-events: auto;
+}
 
+.close:hover {
+  background: #e2e8f0;
+}
+
+/* =========================================================
+   SHOPKEEPER PANEL
+   ========================================================= */
+
+.shopkeeperBox {
+  width: min(520px, 100%);
+}
+
+.shopkeeperBox input {
+  margin-bottom: 8px;
+}
+
+.shopkeeperBox button {
+  cursor: pointer;
+}
+
+#adminProducts {
   margin-top: 10px;
 }
 
-.secondaryButton {
-  width: 100%;
-
-  border: 0;
-
-  border-radius: 10px;
-
-  padding: 11px;
-
-  background: #0f766e;
-
-  color: white;
-
-  font-weight: 700;
-}
-
-.locationButton {
-  width: 100%;
-
-  border: 0;
-
-  border-radius: 10px;
-
-  padding: 12px;
-
-  background: #2563eb;
-
-  color: white;
-
-  font-weight: 700;
-
-  margin-top: 8px;
-}
-
-.upiBox {
-  background: #f0fdf4;
-
-  border-radius: 10px;
-
-  padding: 12px;
-
-  margin-top: 10px;
-}
-
-.upiButton {
-  width: 100%;
-
-  border: 0;
-
-  border-radius: 10px;
-
-  padding: 11px;
-
-  background: #16a34a;
-
-  color: white;
-
-  font-weight: 700;
-
-  margin-top: 8px;
-}
-
-.smallText {
-  font-size: 13px;
-
-  color: #64748b;
-}
-
-
-/* ORDER TYPE */
-
-.orderType {
-  margin-top: 12px;
-}
-
-.orderType label {
-  display: block;
-
-  padding: 11px;
-
+#adminProducts button {
   border: 1px solid #ddd;
-
-  border-radius: 10px;
-
-  margin: 7px 0;
-}
-
-
-/* SHOPKEEPER */
-
-.shopkeeper-section {
-  text-align: center;
-
-  padding: 20px 0 40px;
-}
-
-.shopkeeperButton {
-  border: 1px solid #166534;
-
   background: white;
-
-  color: #166534;
-
-  padding: 12px 20px;
-
-  border-radius: 12px;
-
-  font-weight: 700;
-}
-
-.adminProduct {
-  border: 1px solid #ddd;
-
-  border-radius: 10px;
-
-  padding: 10px;
-
-  margin: 8px 0;
-
-  display: flex;
-
-  justify-content: space-between;
-
-  gap: 8px;
-
-  align-items: center;
-}
-
-.adminProduct button {
-  border: 0;
-
   border-radius: 8px;
-
-  padding: 7px;
-
-  background: #fee2e2;
+  padding: 7px 9px;
+  cursor: pointer;
 }
 
+#adminProducts button:hover {
+  background: #f1f5f9;
+}
 
-/* MOBILE */
+/* =========================================================
+   QUICK ACTIONS
+   ========================================================= */
 
-@media(max-width:600px) {
+#quickActions button {
+  cursor: pointer;
+  transition:
+    transform 0.1s ease,
+    opacity 0.1s ease;
+}
+
+#quickActions button:hover {
+  opacity: 0.9;
+}
+
+#quickActions button:active {
+  transform: scale(0.98);
+}
+
+/* =========================================================
+   HIDDEN
+   ========================================================= */
+
+.hidden {
+  display: none !important;
+}
+
+/* =========================================================
+   MOBILE
+   ========================================================= */
+
+@media (max-width: 600px) {
+
+  header {
+    padding: 9px 12px;
+  }
+
+  .brand {
+    gap: 7px;
+  }
+
+  .brand span {
+    font-size: 27px;
+  }
+
+  .brand img {
+    width: 48px;
+    height: 48px;
+  }
 
   .brand h1 {
-    font-size: 16px;
+    font-size: 17px;
   }
 
   .brand small {
     font-size: 11px;
   }
 
-  .logo {
-    width: 48px;
-    height: 48px;
+  .cart {
+    padding: 9px 10px;
+    font-size: 13px;
   }
 
   .hero {
-    margin: 15px;
-
-    padding: 18px;
-
-    flex-direction: column;
-
-    text-align: center;
-  }
-
-  .heroLogo {
-    width: 120px;
-    height: 120px;
+    margin: 12px;
+    padding: 22px;
+    border-radius: 18px;
   }
 
   .hero h2 {
     font-size: 24px;
   }
 
-  .quick-actions {
-    grid-template-columns:
-      repeat(2, 1fr);
+  .search {
+    margin: 0 12px 12px;
+  }
+
+  .chips {
+    padding-left: 12px;
+    padding-right: 12px;
   }
 
   .grid {
     grid-template-columns:
-      repeat(2, 1fr);
+      repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    padding-left: 12px;
+    padding-right: 12px;
+  }
 
-    padding: 0 10px 30px;
+  .card {
+    padding: 10px;
+  }
+
+  .emoji {
+    font-size: 36px;
+    min-height: 78px;
+    padding: 10px;
+  }
+
+  .card h3 {
+    font-size: 14px;
+  }
+
+  .price {
+    font-size: 15px;
+  }
+
+  .add {
+    font-size: 13px;
+    padding: 9px;
+  }
+
+  .modal {
+    padding: 8px;
+    align-items: center;
+  }
+
+  .modalBox {
+    width: 100%;
+    max-height: 94vh;
+    border-radius: 18px;
+    padding: 20px;
+  }
+
+  .drawer {
+    width: 100%;
+    padding: 16px;
   }
 
 }
-#shopkeeper {
-  z-index: 100 !important;
+
+/* =========================================================
+   VERY SMALL PHONES
+   ========================================================= */
+
+@media (max-width: 380px) {
+
+  .brand h1 {
+    font-size: 15px;
+  }
+
+  .brand small {
+    font-size: 10px;
+  }
+
+  .cart {
+    padding: 8px;
+    font-size: 12px;
+  }
+
+  .grid {
+    gap: 8px;
+  }
+
+  .card {
+    padding: 8px;
+  }
+
 }
 
-#checkout {
-  z-index: 40 !important;
+/* =========================================================
+   SAFE BUTTON RESET
+   ========================================================= */
+
+button {
+  font-family: inherit;
 }
 
-#cartPanel {
-  z-index: 30 !important;
+/* =========================================================
+   RADIO BUTTONS
+   ========================================================= */
+
+input[type="radio"] {
+  width: auto !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  accent-color: #16a34a;
 }
 
-.shopkeeperBox {
-  z-index: 101 !important;
+/* =========================================================
+   SCROLLBAR
+   ========================================================= */
+
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 20px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
 }
