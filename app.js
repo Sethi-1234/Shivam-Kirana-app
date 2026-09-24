@@ -1,46 +1,39 @@
 /* =========================================================
-   SHIVAM KIRANA STORE
-   COMPLETE APP.JS
+   SHIVAM KIRANA STORE - COMPLETE APP.JS
    ========================================================= */
 
 
-/* =========================================================
+/* =========================
    STORE SETTINGS
-   ========================================================= */
+   ========================= */
 
 const STORE = {
   name: "Shivam Kirana Store",
-
   whatsapp: "917231927995",
-
   upi: "Sethishivam04@ybl",
 
   deliveryPin: "301604",
-
   deliveryFee: 0,
-
   minimumOrder: 0,
 
   deliveryTime: "30 minutes",
-
   storeHours: "9:00 AM - 8:00 PM",
-
   deliveryHours: "10:00 AM - 7:00 PM",
 
   holidayDays: [1, 15],
 
   pickup: true,
 
+  // Change this password if you want.
   shopkeeperPassword: "1234"
 };
 
 
-/* =========================================================
-   PRODUCTS
-   ========================================================= */
+/* =========================
+   DEFAULT PRODUCTS
+   ========================= */
 
-let defaultProducts = [
-
+const defaultProducts = [
   {
     id: 1,
     name: "Rice 5 kg",
@@ -49,7 +42,6 @@ let defaultProducts = [
     emoji: "🍚",
     active: true
   },
-
   {
     id: 2,
     name: "Wheat Flour 5 kg",
@@ -58,7 +50,6 @@ let defaultProducts = [
     emoji: "🌾",
     active: true
   },
-
   {
     id: 3,
     name: "Sugar 1 kg",
@@ -67,7 +58,6 @@ let defaultProducts = [
     emoji: "🧂",
     active: true
   },
-
   {
     id: 4,
     name: "Toor Dal 1 kg",
@@ -76,7 +66,6 @@ let defaultProducts = [
     emoji: "🫘",
     active: true
   },
-
   {
     id: 5,
     name: "Milk 1 L",
@@ -85,7 +74,6 @@ let defaultProducts = [
     emoji: "🥛",
     active: true
   },
-
   {
     id: 6,
     name: "Bread",
@@ -94,7 +82,6 @@ let defaultProducts = [
     emoji: "🍞",
     active: true
   },
-
   {
     id: 7,
     name: "Biscuits",
@@ -103,7 +90,6 @@ let defaultProducts = [
     emoji: "🍪",
     active: true
   },
-
   {
     id: 8,
     name: "Tea 250 g",
@@ -112,7 +98,6 @@ let defaultProducts = [
     emoji: "🍵",
     active: true
   },
-
   {
     id: 9,
     name: "Cooking Oil 1 L",
@@ -121,7 +106,6 @@ let defaultProducts = [
     emoji: "🫗",
     active: true
   },
-
   {
     id: 10,
     name: "Bath Soap",
@@ -130,7 +114,6 @@ let defaultProducts = [
     emoji: "🧼",
     active: true
   },
-
   {
     id: 11,
     name: "Shampoo",
@@ -139,7 +122,6 @@ let defaultProducts = [
     emoji: "🧴",
     active: true
   },
-
   {
     id: 12,
     name: "Cold Drink",
@@ -148,87 +130,118 @@ let defaultProducts = [
     emoji: "🥤",
     active: true
   }
-
 ];
 
 
-let products = JSON.parse(
-  localStorage.getItem("shivamProducts") || "null"
-);
+/* =========================
+   LOAD PRODUCTS
+   ========================= */
+
+let products;
+
+try {
+  products = JSON.parse(
+    localStorage.getItem("shivamProducts")
+  );
+} catch (e) {
+  products = null;
+}
 
 if (!Array.isArray(products)) {
   products = defaultProducts;
 }
 
-
-/* Make old products compatible */
-
-products = products.map(p => ({
-  ...p,
-  active: p.active !== false
+products = products.map(product => ({
+  ...product,
+  active: product.active !== false
 }));
 
 
-/* =========================================================
-   CART
-   ========================================================= */
+/* =========================
+   LOAD CART
+   ========================= */
 
-let cart = JSON.parse(
-  localStorage.getItem("shivamCart") || "{}"
-);
+let cart;
+
+try {
+  cart = JSON.parse(
+    localStorage.getItem("shivamCart") || "{}"
+  );
+} catch (e) {
+  cart = {};
+}
+
 
 let category = "All";
-
 let customerLocation = null;
-
 let selectedOrderType = "delivery";
 
 
-/* =========================================================
-   SHORT ID FUNCTION
-   ========================================================= */
+/* =========================
+   HELPER
+   ========================= */
 
-const $ = id => document.getElementById(id);
+const $ = id =>
+  document.getElementById(id);
 
 
-/* =========================================================
+/* =========================
+   ESCAPE HTML
+   ========================= */
+
+function escapeHTML(value) {
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+
+/* =========================
    SAVE PRODUCTS
-   ========================================================= */
+   ========================= */
 
 function saveProducts() {
-
   localStorage.setItem(
     "shivamProducts",
     JSON.stringify(products)
   );
-
 }
 
 
-/* =========================================================
+/* =========================
    SAVE CART
-   ========================================================= */
+   ========================= */
 
 function save() {
-
   localStorage.setItem(
     "shivamCart",
     JSON.stringify(cart)
   );
 
   renderCart();
-
   updateCartCount();
-
 }
 
 
-/* =========================================================
+/* =========================
+   ACTIVE PRODUCTS
+   ========================= */
+
+function activeProducts() {
+  return products.filter(
+    product => product.active !== false
+  );
+}
+
+
+/* =========================
    CART COUNT
-   ========================================================= */
+   ========================= */
 
 function updateCartCount() {
-
   const count = Object.values(cart)
     .reduce(
       (total, quantity) =>
@@ -239,16 +252,14 @@ function updateCartCount() {
   if ($("cartCount")) {
     $("cartCount").textContent = count;
   }
-
 }
 
 
-/* =========================================================
+/* =========================
    CART TOTAL
-   ========================================================= */
+   ========================= */
 
 function cartTotal() {
-
   return Object.keys(cart)
     .reduce((total, id) => {
 
@@ -257,41 +268,30 @@ function cartTotal() {
           p => p.id == id
         );
 
-      if (!product) return total;
+      if (!product) {
+        return total;
+      }
 
       return total +
         Number(product.price) *
         Number(cart[id]);
 
     }, 0);
-
 }
 
 
-/* =========================================================
-   ACTIVE PRODUCTS
-   ========================================================= */
-
-function activeProducts() {
-
-  return products.filter(
-    p => p.active !== false
-  );
-
-}
-
-
-/* =========================================================
+/* =========================
    CATEGORIES
-   ========================================================= */
+   ========================= */
 
 function renderCategories() {
 
-  const box = $("categories");
+  const box =
+    $("categories");
 
   if (!box) return;
 
-  const cats = [
+  const categories = [
     "All",
     ...new Set(
       activeProducts()
@@ -301,43 +301,40 @@ function renderCategories() {
   ];
 
   box.innerHTML =
-    cats.map(c => `
+    categories.map(cat => `
 
       <button
-        class="chip ${c === category ? "active" : ""}"
-        onclick="setCat('${escapeHTML(c)}')">
+        class="chip ${cat === category ? "active" : ""}"
+        onclick="setCat('${escapeHTML(cat)}')">
 
-        ${escapeHTML(c)}
+        ${escapeHTML(cat)}
 
       </button>
 
     `).join("");
-
 }
 
 
-/* =========================================================
+/* =========================
    CATEGORY
-   ========================================================= */
+   ========================= */
 
-function setCat(c) {
-
-  category = c;
+function setCat(cat) {
+  category = cat;
 
   renderCategories();
-
   renderProducts();
-
 }
 
 
-/* =========================================================
-   PRODUCTS
-   ========================================================= */
+/* =========================
+   RENDER PRODUCTS
+   ========================= */
 
 function renderProducts() {
 
-  const box = $("products");
+  const box =
+    $("products");
 
   if (!box) return;
 
@@ -351,53 +348,49 @@ function renderProducts() {
 
   const list =
     activeProducts()
-      .filter(p => {
+      .filter(product => {
 
         const categoryMatch =
           category === "All" ||
-          p.cat === category;
+          product.cat === category;
 
         const searchMatch =
-          p.name
+          product.name
             .toLowerCase()
             .includes(search);
 
         return categoryMatch &&
           searchMatch;
-
       });
 
 
   if (!list.length) {
-
     box.innerHTML =
       "<p>No products found.</p>";
-
     return;
-
   }
 
 
   box.innerHTML =
-    list.map(p => `
+    list.map(product => `
 
       <article class="card">
 
         <div class="emoji">
-          ${p.emoji || "🛒"}
+          ${product.emoji || "🛒"}
         </div>
 
         <h3>
-          ${escapeHTML(p.name)}
+          ${escapeHTML(product.name)}
         </h3>
 
         <div class="price">
-          ₹${Number(p.price)}
+          ₹${Number(product.price)}
         </div>
 
         <button
           class="add"
-          onclick="add(${p.id})">
+          onclick="add(${product.id})">
 
           Add to Cart
 
@@ -406,13 +399,12 @@ function renderProducts() {
       </article>
 
     `).join("");
-
 }
 
 
-/* =========================================================
+/* =========================
    ADD TO CART
-   ========================================================= */
+   ========================= */
 
 function add(id) {
 
@@ -429,13 +421,12 @@ function add(id) {
     Number(cart[id] || 0) + 1;
 
   save();
-
 }
 
 
-/* =========================================================
+/* =========================
    CHANGE QUANTITY
-   ========================================================= */
+   ========================= */
 
 function change(id, amount) {
 
@@ -443,22 +434,17 @@ function change(id, amount) {
     Number(cart[id] || 0) +
     Number(amount);
 
-
   if (cart[id] <= 0) {
-
     delete cart[id];
-
   }
 
-
   save();
-
 }
 
 
-/* =========================================================
+/* =========================
    RENDER CART
-   ========================================================= */
+   ========================= */
 
 function renderCart() {
 
@@ -466,7 +452,6 @@ function renderCart() {
     $("cartItems");
 
   if (!box) return;
-
 
   const ids =
     Object.keys(cart);
@@ -478,24 +463,22 @@ function renderCart() {
       "<p>Your cart is empty.</p>";
 
     if ($("total")) {
-      $("total").textContent =
-        "₹0";
+      $("total").textContent = "₹0";
     }
 
     return;
-
   }
 
 
   box.innerHTML =
     ids.map(id => {
 
-      const p =
+      const product =
         products.find(
-          x => x.id == id
+          p => p.id == id
         );
 
-      if (!p) return "";
+      if (!product) return "";
 
       return `
 
@@ -504,13 +487,13 @@ function renderCart() {
           <div>
 
             <b>
-              ${p.emoji || "🛒"}
-              ${escapeHTML(p.name)}
+              ${product.emoji || "🛒"}
+              ${escapeHTML(product.name)}
             </b>
 
             <br>
 
-            ₹${Number(p.price) *
+            ₹${Number(product.price) *
               Number(cart[id])}
 
           </div>
@@ -518,14 +501,14 @@ function renderCart() {
           <div class="qty">
 
             <button
-              onclick="change(${id},-1)">
+              onclick="change(${id}, -1)">
               −
             </button>
 
             ${cart[id]}
 
             <button
-              onclick="change(${id},1)">
+              onclick="change(${id}, 1)">
               +
             </button>
 
@@ -539,70 +522,48 @@ function renderCart() {
 
 
   if ($("total")) {
-
     $("total").textContent =
       "₹" + cartTotal();
-
   }
-
 }
 
 
-/* =========================================================
+/* =========================
    OPEN CART
-   ========================================================= */
+   ========================= */
 
 function openCart() {
 
-  if ($("checkout")) {
-
-    $("checkout")
-      .classList
-      .add("hidden");
-
-  }
-
-  if ($("shopkeeper")) {
-
-    $("shopkeeper")
-      .classList
-      .add("hidden");
-
-  }
+  closeCheckout();
+  closeShopkeeper();
 
   if ($("cartPanel")) {
-
     $("cartPanel")
       .classList
       .remove("hidden");
-
   }
 
   renderCart();
-
 }
 
 
-/* =========================================================
+/* =========================
    CLOSE CART
-   ========================================================= */
+   ========================= */
 
 function closeCart() {
 
   if ($("cartPanel")) {
-
     $("cartPanel")
       .classList
       .add("hidden");
-
   }
-
 }
 
 
-/* =========================================================
+/* =========================
    OPEN CHECKOUT
-   ========================================================= */
+   ========================= */
 
 function openCheckout() {
 
@@ -613,41 +574,29 @@ function openCheckout() {
     );
 
     return;
-
   }
-
 
   closeCart();
+  closeShopkeeper();
 
+  const checkout =
+    $("checkout");
 
-  if ($("shopkeeper")) {
+  if (!checkout) return;
 
-    $("shopkeeper")
-      .classList
-      .add("hidden");
+  checkout.classList.remove("hidden");
 
-  }
-
-
-  if ($("checkout")) {
-
-    $("checkout")
-      .classList
-      .remove("hidden");
-
-  }
-
+  checkout.style.display = "grid";
 
   customerLocation = null;
 
   setupCheckout();
-
 }
 
 
-/* =========================================================
+/* =========================
    CLOSE CHECKOUT
-   ========================================================= */
+   ========================= */
 
 function closeCheckout() {
 
@@ -659,59 +608,12 @@ function closeCheckout() {
   checkout.classList.add("hidden");
 
   checkout.style.display = "none";
-
-
-  setTimeout(() => {
-
-    checkout.style.display = "";
-
-  }, 10);
-
 }
 
 
-/* =========================================================
-   ORDER TYPE
-   ========================================================= */
-
-function setOrderType(type) {
-
-  selectedOrderType =
-    type;
-
-
-  const delivery =
-    $("deliveryExtra");
-
-  const pickup =
-    $("pickupExtra");
-
-
-  if (delivery) {
-
-    delivery.style.display =
-      type === "delivery"
-        ? "block"
-        : "none";
-
-  }
-
-
-  if (pickup) {
-
-    pickup.style.display =
-      type === "pickup"
-        ? "block"
-        : "none";
-
-  }
-
-}
-
-
-/* =========================================================
+/* =========================
    CHECKOUT SETUP
-   ========================================================= */
+   ========================= */
 
 function setupCheckout() {
 
@@ -720,33 +622,24 @@ function setupCheckout() {
 
   if (!checkout) return;
 
-
   const box =
-    checkout.querySelector(
-      ".modalBox"
-    );
+    checkout.querySelector(".modalBox");
 
   if (!box) return;
 
 
-  let old =
+  /* Remove previous dynamic section */
+
+  const old =
     $("checkoutExtra");
 
-
   if (old) {
-
     old.remove();
-
   }
-
-
-  const sendButton =
-    $("sendOrder");
 
 
   const extra =
     document.createElement("div");
-
 
   extra.id =
     "checkoutExtra";
@@ -754,9 +647,10 @@ function setupCheckout() {
 
   extra.innerHTML = `
 
-    <h3 style="margin-top:18px;">
+    <h3>
       Order Type
     </h3>
+
 
     <label style="
       display:flex;
@@ -803,36 +697,18 @@ function setupCheckout() {
     </label>
 
 
-    <div
-      id="deliveryExtra">
+    <div id="deliveryExtra">
 
       <textarea
         id="address"
-        placeholder="Delivery address"
-        style="
-          width:100%;
-          padding:12px;
-          margin:7px 0;
-          border:1px solid #ddd;
-          border-radius:10px;
-          font:inherit;
-          min-height:90px;
-        "></textarea>
+        placeholder="Delivery address"></textarea>
 
 
       <input
         id="pin"
         placeholder="Delivery PIN code"
         inputmode="numeric"
-        maxlength="6"
-        style="
-          width:100%;
-          padding:12px;
-          margin:7px 0;
-          border:1px solid #ddd;
-          border-radius:10px;
-          font:inherit;
-        ">
+        maxlength="6">
 
 
       <button
@@ -909,12 +785,7 @@ function setupCheckout() {
 
         🏪 <b>Store Pickup</b>
 
-        <br>
-
-        Your order will be ready
-        for pickup at the store.
-
-        <br>
+        <br><br>
 
         Store timing:
         ${STORE.storeHours}
@@ -924,22 +795,14 @@ function setupCheckout() {
     </div>
 
 
-    <h3 style="margin-top:18px;">
+    <h3>
       Payment
     </h3>
 
 
     <select
       id="paymentMethod"
-      onchange="showPayment()"
-      style="
-        width:100%;
-        padding:12px;
-        margin:7px 0;
-        border:1px solid #ddd;
-        border-radius:10px;
-        font:inherit;
-      ">
+      onchange="showPayment()">
 
       <option value="upi">
         💳 UPI
@@ -956,17 +819,13 @@ function setupCheckout() {
     </select>
 
 
-    <div
-      id="paymentInfo"
-      style="
-        background:#f0fdf4;
-        padding:12px;
-        border-radius:10px;
-        margin:8px 0;
-      "></div>
+    <div id="paymentInfo"></div>
 
   `;
 
+
+  const sendButton =
+    $("sendOrder");
 
   if (sendButton) {
 
@@ -978,42 +837,80 @@ function setupCheckout() {
   } else {
 
     box.appendChild(extra);
-
   }
 
+
+  selectedOrderType =
+    "delivery";
 
   showPayment();
 
-  setOrderType("delivery");
 
+  /* Force checkout close button */
 
-  /* Make close button definitely clickable */
-
-  const close =
+  const closeButton =
     $("closeCheckout");
 
-  if (close) {
+  if (closeButton) {
 
-    close.style.position =
-      "absolute";
+    closeButton.style.zIndex =
+      "99999";
 
-    close.style.zIndex =
-      "9999";
-
-    close.style.pointerEvents =
+    closeButton.style.pointerEvents =
       "auto";
 
-    close.onclick =
-      closeCheckout;
+    closeButton.onclick =
+      function(event) {
 
+        event.preventDefault();
+        event.stopPropagation();
+
+        closeCheckout();
+
+      };
   }
-
 }
 
 
-/* =========================================================
+/* =========================
+   ORDER TYPE
+   ========================= */
+
+function setOrderType(type) {
+
+  selectedOrderType =
+    type;
+
+
+  const delivery =
+    $("deliveryExtra");
+
+  const pickup =
+    $("pickupExtra");
+
+
+  if (delivery) {
+
+    delivery.style.display =
+      type === "delivery"
+        ? "block"
+        : "none";
+  }
+
+
+  if (pickup) {
+
+    pickup.style.display =
+      type === "pickup"
+        ? "block"
+        : "none";
+  }
+}
+
+
+/* =========================
    DELIVERY AREA
-   ========================================================= */
+   ========================= */
 
 function checkDeliveryArea() {
 
@@ -1022,7 +919,6 @@ function checkDeliveryArea() {
 
   const status =
     $("areaStatus");
-
 
   if (!pin || !status) return;
 
@@ -1033,36 +929,33 @@ function checkDeliveryArea() {
 
   if (value === STORE.deliveryPin) {
 
-    status.innerHTML =
-      "✅ Delivery available in your area.";
+    status.textContent =
+      "✅ Delivery is available in your area.";
 
     status.style.color =
       "#15803d";
 
   } else {
 
-    status.innerHTML =
-      "❌ Sorry, delivery is currently available only for PIN " +
+    status.textContent =
+      "❌ Delivery is available only for PIN " +
       STORE.deliveryPin +
       ".";
 
     status.style.color =
       "#dc2626";
-
   }
-
 }
 
 
-/* =========================================================
+/* =========================
    CUSTOMER LOCATION
-   ========================================================= */
+   ========================= */
 
 function getCustomerLocation() {
 
   const status =
     $("locationStatus");
-
 
   if (!status) return;
 
@@ -1073,7 +966,6 @@ function getCustomerLocation() {
       "❌ Location is not supported on this device.";
 
     return;
-
   }
 
 
@@ -1085,18 +977,13 @@ function getCustomerLocation() {
 
     position => {
 
-      const latitude =
-        position.coords.latitude;
-
-      const longitude =
-        position.coords.longitude;
-
-
       customerLocation = {
 
-        latitude,
+        latitude:
+          position.coords.latitude,
 
-        longitude,
+        longitude:
+          position.coords.longitude,
 
         accuracy:
           position.coords.accuracy
@@ -1114,49 +1001,40 @@ function getCustomerLocation() {
 
       status.style.color =
         "#15803d";
-
     },
 
 
     error => {
 
-      let message =
-        "❌ Could not get location.";
-
       if (error.code === 1) {
 
-        message =
-          "❌ Location permission was denied. Please allow location access.";
+        status.textContent =
+          "❌ Location permission denied. Please allow location access.";
+
+      } else {
+
+        status.textContent =
+          "❌ Could not get your location.";
 
       }
 
-      status.textContent =
-        message;
-
       status.style.color =
         "#dc2626";
-
     },
 
 
     {
-
       enableHighAccuracy: true,
-
       timeout: 15000,
-
       maximumAge: 0
-
     }
-
   );
-
 }
 
 
-/* =========================================================
-   PAYMENT DISPLAY
-   ========================================================= */
+/* =========================
+   PAYMENT
+   ========================= */
 
 function showPayment() {
 
@@ -1166,84 +1044,97 @@ function showPayment() {
   const info =
     $("paymentInfo");
 
-
   if (!select || !info) return;
 
 
-  const method =
-    select.value;
-
-
-  if (method === "upi") {
+  if (select.value === "upi") {
 
     info.innerHTML = `
 
-      <b>UPI ID</b>
+      <div style="
+        background:#f0fdf4;
+        padding:12px;
+        border-radius:10px;
+        margin:8px 0;
+      ">
 
-      <br>
+        <b>UPI ID</b>
 
-      ${STORE.upi}
+        <br>
 
-      <br><br>
+        ${escapeHTML(STORE.upi)}
 
-      <button
-        type="button"
-        onclick="payByUPI()"
-        style="
-          width:100%;
-          padding:12px;
-          border:0;
-          border-radius:10px;
-          background:#16a34a;
-          color:white;
-          font-weight:700;
-        ">
+        <br><br>
 
-        💳 Pay by UPI
+        <button
+          type="button"
+          onclick="payByUPI()"
+          style="
+            width:100%;
+            padding:12px;
+            border:0;
+            border-radius:10px;
+            background:#16a34a;
+            color:white;
+            font-weight:700;
+          ">
 
-      </button>
+          💳 Pay by UPI
+
+        </button>
+
+      </div>
 
     `;
 
-  }
-
-
-  else if (method === "cod") {
+  } else if (select.value === "cod") {
 
     info.innerHTML = `
 
-      💵 <b>Cash on Delivery</b>
+      <div style="
+        background:#fff7ed;
+        padding:12px;
+        border-radius:10px;
+        margin:8px 0;
+      ">
 
-      <br>
+        💵 <b>Cash on Delivery</b>
 
-      Pay when your order is delivered.
+        <br>
+
+        Pay when your order is delivered.
+
+      </div>
 
     `;
 
-  }
-
-
-  else {
+  } else {
 
     info.innerHTML = `
 
-      🏪 <b>Pay at Store</b>
+      <div style="
+        background:#eff6ff;
+        padding:12px;
+        border-radius:10px;
+        margin:8px 0;
+      ">
 
-      <br>
+        🏪 <b>Pay at Store</b>
 
-      Payment can be made when
-      collecting your order.
+        <br>
+
+        Pay when collecting your order.
+
+      </div>
 
     `;
-
   }
-
 }
 
 
-/* =========================================================
-   UPI PAYMENT
-   ========================================================= */
+/* =========================
+   UPI
+   ========================= */
 
 function payByUPI() {
 
@@ -1254,7 +1145,6 @@ function payByUPI() {
     );
 
     return;
-
   }
 
 
@@ -1262,7 +1152,7 @@ function payByUPI() {
     cartTotal();
 
 
-  const upiURL =
+  const url =
     "upi://pay" +
     "?pa=" +
     encodeURIComponent(STORE.upi) +
@@ -1274,25 +1164,23 @@ function payByUPI() {
 
 
   window.location.href =
-    upiURL;
-
+    url;
 }
 
 
-/* =========================================================
-   SEND ORDER
-   ========================================================= */
+/* =========================
+   SEND ORDER TO WHATSAPP
+   ========================= */
 
 function sendOrderToWhatsApp() {
 
   if (!Object.keys(cart).length) {
 
     alert(
-      "Please add products first."
+      "Your cart is empty."
     );
 
     return;
-
   }
 
 
@@ -1319,12 +1207,10 @@ function sendOrderToWhatsApp() {
     );
 
     return;
-
   }
 
 
   let address = "";
-
   let pin = "";
 
 
@@ -1356,7 +1242,6 @@ function sendOrderToWhatsApp() {
       );
 
       return;
-
     }
 
 
@@ -1366,22 +1251,19 @@ function sendOrderToWhatsApp() {
     ) {
 
       alert(
-        "Delivery is currently available only for PIN " +
+        "Delivery is available only for PIN " +
         STORE.deliveryPin +
         "."
       );
 
       return;
-
     }
-
   }
 
 
   const payment =
     $("paymentMethod")
-      ? $("paymentMethod")
-          .value
+      ? $("paymentMethod").value
       : "upi";
 
 
@@ -1390,39 +1272,35 @@ function sendOrderToWhatsApp() {
 
 
   if (payment === "cod") {
-
     paymentText =
       "Cash on Delivery";
-
   }
 
 
   if (payment === "store") {
-
     paymentText =
       "Pay at Store";
-
   }
 
 
-  const lines =
+  const items =
     Object.keys(cart)
       .map(id => {
 
-        const p =
+        const product =
           products.find(
-            x => x.id == id
+            p => p.id == id
           );
 
-        if (!p) return "";
+        if (!product) return "";
 
         return (
-          p.name +
+          product.name +
           " x " +
           cart[id] +
           " = ₹" +
           (
-            Number(p.price) *
+            Number(product.price) *
             Number(cart[id])
           )
         );
@@ -1431,53 +1309,32 @@ function sendOrderToWhatsApp() {
       .filter(Boolean);
 
 
-  const total =
-    cartTotal();
-
-
   let locationText =
     "Location not shared";
 
 
   if (customerLocation) {
 
-    const lat =
-      customerLocation.latitude;
-
-    const lng =
-      customerLocation.longitude;
-
-
     locationText =
       "📍 Customer Location:\n" +
       "https://www.google.com/maps?q=" +
-      lat +
+      customerLocation.latitude +
       "," +
-      lng;
-
+      customerLocation.longitude;
   }
 
 
-  const orderTypeText =
+  const orderType =
     selectedOrderType ===
     "delivery"
       ? "Home Delivery"
       : "Store Pickup";
 
 
-  const deliveryText =
-    selectedOrderType ===
-    "delivery"
-      ? "Delivery time: " +
-        STORE.deliveryTime
-      : "Pickup from store";
-
-
   const message =
-
 `Hello ${STORE.name},
 
-I would like to place an order.
+I want to place an order.
 
 Customer:
 ${name}
@@ -1486,27 +1343,30 @@ Phone:
 ${phone}
 
 Order Type:
-${orderTypeText}
+${orderType}
 
-${address ? "Address:\n" + address + "\n" : ""}${pin ? "PIN:\n" + pin + "\n" : ""}
+${address ? "Address:\n" + address + "\n" : ""}
+${pin ? "PIN:\n" + pin + "\n" : ""}
 
 Products:
-${lines.join("\n")}
+${items.join("\n")}
 
 Total:
-₹${total}
+₹${cartTotal()}
 
 Payment:
 ${paymentText}
 
-${deliveryText}
+${selectedOrderType === "delivery"
+  ? "Delivery time: " + STORE.deliveryTime
+  : "Store Pickup"}
 
 ${locationText}
 
 Thank you.`;
 
 
-  const whatsappURL =
+  const whatsapp =
     "https://wa.me/" +
     STORE.whatsapp +
     "?text=" +
@@ -1516,44 +1376,376 @@ Thank you.`;
 
 
   window.open(
-    whatsappURL,
+    whatsapp,
     "_blank"
   );
-
 }
 
 
 /* =========================================================
-   SHOPKEEPER
+   SHOPKEEPER SECTION
    ========================================================= */
+
+
+/* =========================
+   CREATE SHOPKEEPER BUTTON
+   ========================= */
+
+function createShopkeeperButton() {
+
+  /*
+     Remove any old shopkeeper button
+     created by an earlier version.
+  */
+
+  document
+    .querySelectorAll(
+      ".shivam-shopkeeper-button"
+    )
+    .forEach(button => {
+      button.remove();
+    });
+
+
+  const quickActions =
+    $("quickActions");
+
+
+  /*
+     If quickActions exists,
+     put the button inside it.
+  */
+
+  if (quickActions) {
+
+    const button =
+      document.createElement("button");
+
+    button.type =
+      "button";
+
+    button.className =
+      "shivam-shopkeeper-button";
+
+
+    button.textContent =
+      "👨‍💼 Shopkeeper - Add Products";
+
+
+    button.style.cssText = `
+      width:100%;
+      display:block;
+      padding:13px;
+      margin-top:8px;
+      border:2px solid #16a34a;
+      border-radius:12px;
+      background:#ffffff;
+      color:#166534;
+      font-weight:800;
+      font-size:15px;
+      cursor:pointer;
+      position:relative;
+      z-index:10;
+    `;
+
+
+    button.onclick =
+      function(event) {
+
+        event.preventDefault();
+        event.stopPropagation();
+
+        openShopkeeper();
+
+      };
+
+
+    quickActions.appendChild(
+      button
+    );
+
+    return;
+  }
+
+
+  /*
+     If quickActions does NOT exist,
+     create a completely new visible
+     shopkeeper area.
+  */
+
+  const main =
+    document.querySelector("main");
+
+
+  if (!main) return;
+
+
+  const section =
+    document.createElement("section");
+
+
+  section.id =
+    "shopkeeperQuickSection";
+
+
+  section.style.cssText = `
+    max-width:1100px;
+    margin:12px auto;
+    padding:0 5%;
+  `;
+
+
+  section.innerHTML = `
+
+    <button
+      type="button"
+      class="shivam-shopkeeper-button"
+      onclick="openShopkeeper()"
+      style="
+        width:100%;
+        display:block;
+        padding:13px;
+        border:2px solid #16a34a;
+        border-radius:12px;
+        background:white;
+        color:#166534;
+        font-weight:800;
+        font-size:15px;
+        cursor:pointer;
+      ">
+
+      👨‍💼 Shopkeeper - Add Products
+
+    </button>
+
+  `;
+
+
+  const hero =
+    document.querySelector(".hero");
+
+
+  if (hero) {
+
+    hero.after(section);
+
+  } else {
+
+    main.prepend(section);
+
+  }
+}
+
+
+/* =========================
+   QUICK ACTIONS
+   ========================= */
+
+function createQuickActions() {
+
+  const old =
+    $("quickActions");
+
+
+  if (old) {
+
+    /*
+       Make sure Shopkeeper button
+       is always added.
+    */
+
+    createShopkeeperButton();
+
+    return;
+  }
+
+
+  const main =
+    document.querySelector("main");
+
+
+  if (!main) return;
+
+
+  const section =
+    document.createElement("section");
+
+
+  section.id =
+    "quickActions";
+
+
+  section.style.cssText = `
+    max-width:1100px;
+    margin:15px auto;
+    padding:0 5%;
+  `;
+
+
+  section.innerHTML = `
+
+    <div style="
+      display:grid;
+      grid-template-columns:
+      repeat(2,minmax(0,1fr));
+      gap:8px;
+    ">
+
+      <button
+        type="button"
+        onclick="openCheckout()"
+        style="
+          padding:12px;
+          border:0;
+          border-radius:12px;
+          background:#16a34a;
+          color:white;
+          font-weight:700;
+          cursor:pointer;
+        ">
+
+        🛒 Order Now
+
+      </button>
+
+
+      <button
+        type="button"
+        onclick="showDeliveryInfo()"
+        style="
+          padding:12px;
+          border:0;
+          border-radius:12px;
+          background:#0f766e;
+          color:white;
+          font-weight:700;
+          cursor:pointer;
+        ">
+
+        🚚 Delivery
+
+      </button>
+
+
+      <button
+        type="button"
+        onclick="showPickupInfo()"
+        style="
+          padding:12px;
+          border:0;
+          border-radius:12px;
+          background:#2563eb;
+          color:white;
+          font-weight:700;
+          cursor:pointer;
+        ">
+
+        🏪 Pickup
+
+      </button>
+
+
+      <button
+        type="button"
+        onclick="showPaymentInfo()"
+        style="
+          padding:12px;
+          border:0;
+          border-radius:12px;
+          background:#7c3aed;
+          color:white;
+          font-weight:700;
+          cursor:pointer;
+        ">
+
+        💳 Payment
+
+      </button>
+
+
+      <button
+        type="button"
+        onclick="showHelp()"
+        style="
+          padding:12px;
+          border:0;
+          border-radius:12px;
+          background:#475569;
+          color:white;
+          font-weight:700;
+          cursor:pointer;
+        ">
+
+        ❓ Help
+
+      </button>
+
+
+      <button
+        type="button"
+        onclick="openWhatsApp()"
+        style="
+          padding:12px;
+          border:0;
+          border-radius:12px;
+          background:#16a34a;
+          color:white;
+          font-weight:700;
+          cursor:pointer;
+        ">
+
+        💬 WhatsApp
+
+      </button>
+
+    </div>
+
+  `;
+
+
+  const hero =
+    document.querySelector(".hero");
+
+
+  if (hero) {
+
+    hero.after(section);
+
+  } else {
+
+    main.prepend(section);
+
+  }
+
+
+  /*
+     IMPORTANT:
+     Always add Shopkeeper button
+     AFTER quick actions.
+  */
+
+  createShopkeeperButton();
+}
+
+
+/* =========================
+   OPEN SHOPKEEPER
+   ========================= */
 
 function openShopkeeper() {
 
-  /* Close cart */
+  /*
+     Close everything else first.
+  */
 
-  if ($("cartPanel")) {
-
-    $("cartPanel")
-      .classList
-      .add("hidden");
-
-  }
-
-
-  /* Close checkout */
-
-  if ($("checkout")) {
-
-    $("checkout")
-      .classList
-      .add("hidden");
-
-  }
+  closeCart();
+  closeCheckout();
 
 
   const password =
     prompt(
-      "Enter shopkeeper password:"
+      "👨‍💼 Enter Shopkeeper Password"
     );
 
 
@@ -1562,16 +1754,19 @@ function openShopkeeper() {
     STORE.shopkeeperPassword
   ) {
 
-    alert(
-      "Incorrect password."
-    );
+    if (password !== null) {
+
+      alert(
+        "❌ Incorrect password."
+      );
+
+    }
 
     return;
-
   }
 
 
-  const panel =
+  let panel =
     $("shopkeeper");
 
 
@@ -1579,38 +1774,48 @@ function openShopkeeper() {
 
     createShopkeeperPanel();
 
+    panel =
+      $("shopkeeper");
   }
 
 
-  const finalPanel =
-    $("shopkeeper");
+  if (!panel) return;
 
 
-  if (finalPanel) {
+  panel.classList.remove(
+    "hidden"
+  );
 
-    finalPanel
-      .classList
-      .remove("hidden");
 
-    finalPanel.style.display =
-      "grid";
+  panel.style.display =
+    "grid";
 
-    finalPanel.style.zIndex =
-      "1000";
 
-  }
+  panel.style.zIndex =
+    "99999";
 
 
   renderAdminProducts();
-
 }
 
 
-/* =========================================================
+/* =========================
    CREATE SHOPKEEPER PANEL
-   ========================================================= */
+   ========================= */
 
 function createShopkeeperPanel() {
+
+  /*
+     Remove old panel if it somehow exists.
+  */
+
+  const old =
+    $("shopkeeper");
+
+  if (old) {
+    old.remove();
+  }
+
 
   const panel =
     document.createElement("div");
@@ -1619,9 +1824,12 @@ function createShopkeeperPanel() {
   panel.id =
     "shopkeeper";
 
-
   panel.className =
     "modal";
+
+
+  panel.style.zIndex =
+    "99999";
 
 
   panel.innerHTML = `
@@ -1630,13 +1838,16 @@ function createShopkeeperPanel() {
       class="modalBox shopkeeperBox"
       style="
         max-height:90vh;
-        overflow:auto;
+        overflow-y:auto;
+        position:relative;
       ">
+
 
       <button
         id="closeShopkeeper"
         class="close"
-        type="button">
+        type="button"
+        aria-label="Close">
 
         ✕
 
@@ -1648,50 +1859,60 @@ function createShopkeeperPanel() {
       </h2>
 
 
-      <p
-        style="
-          color:#64748b;
-        ">
+      <p style="
+        color:#64748b;
+      ">
 
-        Manage products on this device.
+        Add and manage products.
 
       </p>
 
 
       <input
         id="adminProductName"
+        type="text"
         placeholder="Product name">
 
 
       <input
         id="adminProductPrice"
-        placeholder="Price"
         type="number"
-        min="0">
+        min="0"
+        placeholder="Price">
 
 
       <input
         id="adminProductCategory"
+        type="text"
         placeholder="Category">
 
 
       <input
         id="adminProductEmoji"
+        type="text"
         placeholder="Emoji e.g. 🍚">
 
 
       <button
         id="addShopProductButton"
+        type="button"
         class="primary"
-        type="button">
+        style="
+          margin-top:5px;
+        ">
 
         ➕ Add Product
 
       </button>
 
 
-      <h3>
+      <h3
+        style="
+          margin-top:22px;
+        ">
+
         Products
+
       </h3>
 
 
@@ -1710,25 +1931,66 @@ function createShopkeeperPanel() {
   );
 
 
-  $("closeShopkeeper").onclick =
-    closeShopkeeper;
+  const closeButton =
+    $("closeShopkeeper");
 
 
-  $("addShopProductButton").onclick =
-    addShopProduct;
+  if (closeButton) {
 
+    closeButton.onclick =
+      function(event) {
+
+        event.preventDefault();
+        event.stopPropagation();
+
+        closeShopkeeper();
+
+      };
+  }
+
+
+  const addButton =
+    $("addShopProductButton");
+
+
+  if (addButton) {
+
+    addButton.onclick =
+      addShopProduct;
+
+  }
+
+
+  /*
+     Also allow tapping outside
+     the shopkeeper box to close.
+  */
+
+  panel.addEventListener(
+    "click",
+    function(event) {
+
+      if (
+        event.target === panel
+      ) {
+
+        closeShopkeeper();
+
+      }
+
+    }
+  );
 }
 
 
-/* =========================================================
+/* =========================
    CLOSE SHOPKEEPER
-   ========================================================= */
+   ========================= */
 
 function closeShopkeeper() {
 
   const panel =
     $("shopkeeper");
-
 
   if (!panel) return;
 
@@ -1737,21 +1999,20 @@ function closeShopkeeper() {
     "hidden"
   );
 
+
   panel.style.display =
     "none";
-
 }
 
 
-/* =========================================================
-   ADMIN PRODUCTS
-   ========================================================= */
+/* =========================
+   ADMIN PRODUCT LIST
+   ========================= */
 
 function renderAdminProducts() {
 
   const box =
     $("adminProducts");
-
 
   if (!box) return;
 
@@ -1762,49 +2023,47 @@ function renderAdminProducts() {
       "<p>No products available.</p>";
 
     return;
-
   }
 
 
   box.innerHTML =
-    products.map(p => `
+    products.map(product => `
 
-      <div
-        style="
-          display:flex;
-          justify-content:space-between;
-          gap:10px;
-          align-items:center;
-          padding:12px 0;
-          border-bottom:1px solid #eee;
+      <div style="
+        display:flex;
+        justify-content:space-between;
+        align-items:center;
+        gap:10px;
+        padding:12px 0;
+        border-bottom:1px solid #eee;
+      ">
+
+        <div style="
+          min-width:0;
+          flex:1;
         ">
 
-        <div>
-
           <b>
-
-            ${p.emoji || "🛒"}
-
-            ${escapeHTML(p.name)}
-
+            ${product.emoji || "🛒"}
+            ${escapeHTML(product.name)}
           </b>
 
           <br>
 
-          ₹${Number(p.price)}
+          ₹${Number(product.price)}
 
           <br>
 
           <small>
 
             ${escapeHTML(
-              p.cat || "General"
+              product.cat || "General"
             )}
 
             <br>
 
             ${
-              p.active !== false
+              product.active !== false
                 ? "✅ Available"
                 : "❌ Hidden"
             }
@@ -1814,15 +2073,16 @@ function renderAdminProducts() {
         </div>
 
 
-        <div
-          style="
-            display:flex;
-            gap:5px;
-          ">
+        <div style="
+          display:flex;
+          gap:5px;
+          flex-wrap:wrap;
+        ">
 
           <button
             type="button"
-            onclick="editProduct(${p.id})">
+            onclick="editProduct(${product.id})"
+            title="Edit">
 
             ✏️
 
@@ -1831,10 +2091,11 @@ function renderAdminProducts() {
 
           <button
             type="button"
-            onclick="toggleProduct(${p.id})">
+            onclick="toggleProduct(${product.id})"
+            title="Show/Hide">
 
             ${
-              p.active !== false
+              product.active !== false
                 ? "🙈"
                 : "👁️"
             }
@@ -1844,7 +2105,8 @@ function renderAdminProducts() {
 
           <button
             type="button"
-            onclick="deleteProduct(${p.id})">
+            onclick="deleteProduct(${product.id})"
+            title="Delete">
 
             🗑️
 
@@ -1855,40 +2117,45 @@ function renderAdminProducts() {
       </div>
 
     `).join("");
-
 }
 
 
-/* =========================================================
+/* =========================
    ADD PRODUCT
-   ========================================================= */
+   ========================= */
 
 function addShopProduct() {
 
   const name =
     $("adminProductName")
-      .value
-      .trim();
+      ? $("adminProductName")
+          .value
+          .trim()
+      : "";
 
 
   const price =
-    Number(
-      $("adminProductPrice")
-        .value
-    );
+    $("adminProductPrice")
+      ? Number(
+          $("adminProductPrice").value
+        )
+      : 0;
 
 
   const category =
     $("adminProductCategory")
-      .value
-      .trim();
+      ? $("adminProductCategory")
+          .value
+          .trim()
+      : "";
 
 
   const emoji =
     $("adminProductEmoji")
-      .value
-      .trim() ||
-    "🛒";
+      ? $("adminProductEmoji")
+          .value
+          .trim()
+      : "";
 
 
   if (!name) {
@@ -1898,12 +2165,11 @@ function addShopProduct() {
     );
 
     return;
-
   }
 
 
   if (
-    !price ||
+    !Number.isFinite(price) ||
     price < 0
   ) {
 
@@ -1912,18 +2178,16 @@ function addShopProduct() {
     );
 
     return;
-
   }
 
 
   if (!category) {
 
     alert(
-      "Please enter category."
+      "Please enter a category."
     );
 
     return;
-
   }
 
 
@@ -1942,7 +2206,7 @@ function addShopProduct() {
       category,
 
     emoji:
-      emoji,
+      emoji || "🛒",
 
     active:
       true
@@ -1953,20 +2217,17 @@ function addShopProduct() {
   saveProducts();
 
 
-  $("adminProductName")
-    .value = "";
+  $("adminProductName").value =
+    "";
 
+  $("adminProductPrice").value =
+    "";
 
-  $("adminProductPrice")
-    .value = "";
+  $("adminProductCategory").value =
+    "";
 
-
-  $("adminProductCategory")
-    .value = "";
-
-
-  $("adminProductEmoji")
-    .value = "";
+  $("adminProductEmoji").value =
+    "";
 
 
   renderAdminProducts();
@@ -1977,15 +2238,14 @@ function addShopProduct() {
 
 
   alert(
-    "✅ Product added successfully."
+    "✅ Product added successfully!"
   );
-
 }
 
 
-/* =========================================================
+/* =========================
    EDIT PRODUCT
-   ========================================================= */
+   ========================= */
 
 function editProduct(id) {
 
@@ -1993,7 +2253,6 @@ function editProduct(id) {
     products.find(
       p => p.id == id
     );
-
 
   if (!product) return;
 
@@ -2004,7 +2263,6 @@ function editProduct(id) {
       product.name
     );
 
-
   if (name === null) return;
 
 
@@ -2013,7 +2271,6 @@ function editProduct(id) {
       "Price:",
       product.price
     );
-
 
   if (price === null) return;
 
@@ -2024,7 +2281,6 @@ function editProduct(id) {
       product.cat
     );
 
-
   if (category === null) return;
 
 
@@ -2034,13 +2290,14 @@ function editProduct(id) {
       product.emoji || "🛒"
     );
 
-
   if (emoji === null) return;
 
 
   if (
     !name.trim() ||
-    !Number(price)
+    !Number.isFinite(
+      Number(price)
+    )
   ) {
 
     alert(
@@ -2048,42 +2305,33 @@ function editProduct(id) {
     );
 
     return;
-
   }
 
 
   product.name =
     name.trim();
 
-
   product.price =
     Number(price);
-
 
   product.cat =
     category.trim();
 
-
   product.emoji =
-    emoji.trim() ||
-    "🛒";
+    emoji.trim() || "🛒";
 
 
   saveProducts();
 
-
   renderAdminProducts();
-
   renderCategories();
-
   renderProducts();
-
 }
 
 
-/* =========================================================
+/* =========================
    HIDE / SHOW PRODUCT
-   ========================================================= */
+   ========================= */
 
 function toggleProduct(id) {
 
@@ -2091,7 +2339,6 @@ function toggleProduct(id) {
     products.find(
       p => p.id == id
     );
-
 
   if (!product) return;
 
@@ -2102,19 +2349,15 @@ function toggleProduct(id) {
 
   saveProducts();
 
-
   renderAdminProducts();
-
   renderCategories();
-
   renderProducts();
-
 }
 
 
-/* =========================================================
+/* =========================
    DELETE PRODUCT
-   ========================================================= */
+   ========================= */
 
 function deleteProduct(id) {
 
@@ -2123,11 +2366,10 @@ function deleteProduct(id) {
       p => p.id == id
     );
 
-
   if (!product) return;
 
 
-  const yes =
+  const answer =
     confirm(
       'Delete "' +
       product.name +
@@ -2135,7 +2377,7 @@ function deleteProduct(id) {
     );
 
 
-  if (!yes) return;
+  if (!answer) return;
 
 
   products =
@@ -2148,207 +2390,28 @@ function deleteProduct(id) {
 
 
   saveProducts();
-
   save();
 
 
   renderAdminProducts();
-
   renderCategories();
-
   renderProducts();
 
 
   alert(
     "✅ Product deleted."
   );
-
 }
 
 
-/* =========================================================
-   QUICK ACTIONS
-   ========================================================= */
-
-function createQuickActions() {
-
-  const main =
-    document.querySelector("main");
-
-
-  if (!main) return;
-
-
-  if (
-    $("quickActions")
-  ) return;
-
-
-  const section =
-    document.createElement("section");
-
-
-  section.id =
-    "quickActions";
-
-
-  section.style.cssText =
-    "max-width:1100px;margin:15px auto;padding:0 5%;";
-
-
-  section.innerHTML = `
-
-    <div style="
-      display:grid;
-      grid-template-columns:
-      repeat(2,1fr);
-      gap:8px;
-    ">
-
-      <button
-        onclick="openCheckout()"
-        style="
-          padding:12px;
-          border:0;
-          border-radius:12px;
-          background:#16a34a;
-          color:white;
-          font-weight:700;
-        ">
-
-        🛒 Order Now
-
-      </button>
-
-
-      <button
-        onclick="showDeliveryInfo()"
-        style="
-          padding:12px;
-          border:0;
-          border-radius:12px;
-          background:#0f766e;
-          color:white;
-          font-weight:700;
-        ">
-
-        🚚 Delivery
-
-      </button>
-
-
-      <button
-        onclick="showPickupInfo()"
-        style="
-          padding:12px;
-          border:0;
-          border-radius:12px;
-          background:#2563eb;
-          color:white;
-          font-weight:700;
-        ">
-
-        🏪 Pickup
-
-      </button>
-
-
-      <button
-        onclick="showPaymentInfo()"
-        style="
-          padding:12px;
-          border:0;
-          border-radius:12px;
-          background:#7c3aed;
-          color:white;
-          font-weight:700;
-        ">
-
-        💳 Payment
-
-      </button>
-
-
-      <button
-        onclick="showHelp()"
-        style="
-          padding:12px;
-          border:0;
-          border-radius:12px;
-          background:#475569;
-          color:white;
-          font-weight:700;
-        ">
-
-        ❓ Help
-
-      </button>
-
-
-      <button
-        onclick="openWhatsApp()"
-        style="
-          padding:12px;
-          border:0;
-          border-radius:12px;
-          background:#16a34a;
-          color:white;
-          font-weight:700;
-        ">
-
-        💬 WhatsApp
-
-      </button>
-
-
-      <button
-        onclick="openShopkeeper()"
-        style="
-          grid-column:1/-1;
-          padding:10px;
-          border:1px solid #ddd;
-          border-radius:12px;
-          background:white;
-          color:#475569;
-          font-weight:700;
-        ">
-
-        👨‍💼 Shopkeeper
-
-      </button>
-
-    </div>
-
-  `;
-
-
-  const hero =
-    document.querySelector(
-      ".hero"
-    );
-
-
-  if (hero) {
-
-    hero.after(section);
-
-  } else {
-
-    main.prepend(section);
-
-  }
-
-}
-
-
-/* =========================================================
-   STORE INFORMATION
-   ========================================================= */
+/* =========================
+   INFORMATION
+   ========================= */
 
 function showDeliveryInfo() {
 
   alert(
-`🚚 DELIVERY INFORMATION
+`🚚 DELIVERY
 
 Delivery time:
 ${STORE.deliveryTime}
@@ -2368,7 +2431,6 @@ NO MINIMUM ORDER
 Holiday:
 1st and 15th of every month`
   );
-
 }
 
 
@@ -2382,16 +2444,15 @@ Pickup is available.
 Store timing:
 ${STORE.storeHours}
 
-Please place your order online and collect it from the store.`
+Place your order online and collect it from the store.`
   );
-
 }
 
 
 function showPaymentInfo() {
 
   alert(
-`💳 PAYMENT OPTIONS
+`💳 PAYMENT
 
 UPI:
 ${STORE.upi}
@@ -2405,16 +2466,15 @@ Available
 Delivery charge:
 FREE`
   );
-
 }
 
 
 function showHelp() {
 
   alert(
-`❓ HELP
+`❓ HOW TO ORDER
 
-1. Add products to your cart.
+1. Add products to Cart.
 
 2. Open Cart.
 
@@ -2426,155 +2486,121 @@ function showHelp() {
 
 6. For delivery, enter PIN ${STORE.deliveryPin}.
 
-7. You can share your current location.
+7. You can share your location.
 
-8. Select your payment method.
+8. Select payment method.
 
 9. Tap Send Order.
-
-Your order will be sent to Shivam Kirana Store on WhatsApp.
 
 WhatsApp:
 +91 72319 27995`
   );
-
 }
 
 
-/* =========================================================
+/* =========================
    WHATSAPP
-   ========================================================= */
+   ========================= */
 
 function openWhatsApp() {
 
-  const url =
-    "https://wa.me/" +
-    STORE.whatsapp;
-
-
   window.open(
-    url,
+    "https://wa.me/" +
+    STORE.whatsapp,
     "_blank"
   );
-
 }
 
 
-/* =========================================================
-   ESCAPE HTML
-   ========================================================= */
-
-function escapeHTML(value) {
-
-  return String(value)
-    .replace(
-      /&/g,
-      "&amp;"
-    )
-    .replace(
-      /</g,
-      "&lt;"
-    )
-    .replace(
-      />/g,
-      "&gt;"
-    )
-    .replace(
-      /"/g,
-      "&quot;"
-    )
-    .replace(
-      /'/g,
-      "&#039;"
-    );
-
-}
-
-
-/* =========================================================
-   SEARCH
-   ========================================================= */
+/* =========================
+   EVENT CONNECTIONS
+   ========================= */
 
 if ($("search")) {
 
   $("search").oninput =
     renderProducts;
-
 }
 
-
-/* =========================================================
-   CART BUTTON
-   ========================================================= */
 
 if ($("cartBtn")) {
 
   $("cartBtn").onclick =
     openCart;
-
 }
 
-
-/* =========================================================
-   CART CLOSE
-   ========================================================= */
 
 if ($("closeCart")) {
 
   $("closeCart").onclick =
     closeCart;
-
 }
 
-
-/* =========================================================
-   ORDER BUTTON
-   ========================================================= */
 
 if ($("orderBtn")) {
 
   $("orderBtn").onclick =
     openCheckout;
-
 }
 
-
-/* =========================================================
-   CHECKOUT CLOSE
-   ========================================================= */
 
 if ($("closeCheckout")) {
 
   $("closeCheckout").onclick =
     closeCheckout;
-
 }
 
-
-/* =========================================================
-   SEND ORDER BUTTON
-   ========================================================= */
 
 if ($("sendOrder")) {
 
   $("sendOrder").onclick =
     sendOrderToWhatsApp;
+}
+
+
+/* =========================
+   START APP
+   ========================= */
+
+function startShivamStore() {
+
+  renderCategories();
+
+  renderProducts();
+
+  renderCart();
+
+  updateCartCount();
+
+  saveProducts();
+
+  /*
+     Create the quick buttons.
+     This ALWAYS creates the
+     Shopkeeper button afterward.
+  */
+
+  createQuickActions();
 
 }
 
 
-/* =========================================================
-   START APP
-   ========================================================= */
+/* =========================
+   START
+   ========================= */
 
-createQuickActions();
+if (
+  document.readyState ===
+  "loading"
+) {
 
-renderCategories();
+  document.addEventListener(
+    "DOMContentLoaded",
+    startShivamStore
+  );
 
-renderProducts();
+} else {
 
-renderCart();
+  startShivamStore();
 
-updateCartCount();
-
-saveProducts();
+}
