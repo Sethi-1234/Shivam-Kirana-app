@@ -1,196 +1,748 @@
 /* =========================================================
-   SHIVAM KIRANA STORE - COMPLETE APP.JS
+   SHIVAM KIRANA STORE
+   COMPLETE APP.JS
+   Supabase + Shopkeeper + Orders + Products
    ========================================================= */
-
 
 /* =========================
    STORE SETTINGS
-   ========================= */
+========================= */
 
 const STORE = {
   name: "Shivam Kirana Store",
+
   whatsapp: "917231927995",
+
   upi: "Sethishivam04@ybl",
 
   deliveryPin: "301604",
+
   deliveryFee: 0,
-  minimumOrder: 0,
+
+  minOrder: 0,
 
   deliveryTime: "30 minutes",
-  storeHours: "9:00 AM - 8:00 PM",
-  deliveryHours: "10:00 AM - 7:00 PM",
 
-  holidayDays: [1, 15],
+  deliveryHours: "10 AM - 7 PM",
+
+  storeHours: "9 AM - 8 PM",
+
+  holidays: [1, 15],
 
   pickup: true,
 
-  // Change this password if you want.
-  shopkeeperPassword: "1234"
+  logo: "logo.png"
 };
 
 
 /* =========================
-   DEFAULT PRODUCTS
-   ========================= */
+   SUPABASE
+========================= */
 
-const defaultProducts = [
-  {
-    id: 1,
-    name: "Rice 5 kg",
-    price: 320,
-    cat: "Staples",
-    emoji: "🍚",
-    active: true
-  },
-  {
-    id: 2,
-    name: "Wheat Flour 5 kg",
-    price: 260,
-    cat: "Staples",
-    emoji: "🌾",
-    active: true
-  },
-  {
-    id: 3,
-    name: "Sugar 1 kg",
-    price: 48,
-    cat: "Staples",
-    emoji: "🧂",
-    active: true
-  },
-  {
-    id: 4,
-    name: "Toor Dal 1 kg",
-    price: 140,
-    cat: "Pulses",
-    emoji: "🫘",
-    active: true
-  },
-  {
-    id: 5,
-    name: "Milk 1 L",
-    price: 60,
-    cat: "Dairy",
-    emoji: "🥛",
-    active: true
-  },
-  {
-    id: 6,
-    name: "Bread",
-    price: 40,
-    cat: "Bakery",
-    emoji: "🍞",
-    active: true
-  },
-  {
-    id: 7,
-    name: "Biscuits",
-    price: 30,
-    cat: "Snacks",
-    emoji: "🍪",
-    active: true
-  },
-  {
-    id: 8,
-    name: "Tea 250 g",
-    price: 120,
-    cat: "Beverages",
-    emoji: "🍵",
-    active: true
-  },
-  {
-    id: 9,
-    name: "Cooking Oil 1 L",
-    price: 150,
-    cat: "Staples",
-    emoji: "🫗",
-    active: true
-  },
-  {
-    id: 10,
-    name: "Bath Soap",
-    price: 45,
-    cat: "Personal Care",
-    emoji: "🧼",
-    active: true
-  },
-  {
-    id: 11,
-    name: "Shampoo",
-    price: 90,
-    cat: "Personal Care",
-    emoji: "🧴",
-    active: true
-  },
-  {
-    id: 12,
-    name: "Cold Drink",
-    price: 50,
-    cat: "Beverages",
-    emoji: "🥤",
-    active: true
-  }
-];
+const SUPABASE_URL =
+  "https://mwvypqlchvrfbafwtdwp.supabase.co";
+
+const SUPABASE_KEY =
+  "sb_publishable_oS5NBiW-0z6T_awwAkbJxA_Vh0YeFCC";
+
+let supabaseClient = null;
 
 
 /* =========================
-   LOAD PRODUCTS
-   ========================= */
+   APP STATE
+========================= */
 
-let products;
+let products = [];
 
-try {
-  products = JSON.parse(
-    localStorage.getItem("shivamProducts")
-  );
-} catch (e) {
-  products = null;
-}
-
-if (!Array.isArray(products)) {
-  products = defaultProducts;
-}
-
-products = products.map(product => ({
-  ...product,
-  active: product.active !== false
-}));
-
-
-/* =========================
-   LOAD CART
-   ========================= */
-
-let cart;
-
-try {
-  cart = JSON.parse(
-    localStorage.getItem("shivamCart") || "{}"
-  );
-} catch (e) {
-  cart = {};
-}
-
+let cart =
+  JSON.parse(localStorage.getItem("shivamCart") || "{}");
 
 let category = "All";
+
 let customerLocation = null;
-let selectedOrderType = "delivery";
+
+let editingProductId = null;
+
+let shopkeeperUser = null;
 
 
 /* =========================
-   HELPER
-   ========================= */
+   HELPERS
+========================= */
 
-const $ = id =>
-  document.getElementById(id);
+const $ = id => document.getElementById(id);
+
+function money(value) {
+  return "₹" + Number(value || 0).toFixed(0);
+}
+
+function saveCart() {
+  localStorage.setItem(
+    "shivamCart",
+    JSON.stringify(cart)
+  );
+
+  updateCartCount();
+}
+
+function updateCartCount() {
+
+  const count =
+    Object.values(cart)
+      .reduce((sum, qty) => sum + Number(qty), 0);
+
+  if ($("cartCount")) {
+    $("cartCount").textContent = count;
+  }
+}
+
+function cartTotal() {
+
+  return Object.keys(cart).reduce((sum, id) => {
+
+    const product =
+      products.find(p => String(p.id) === String(id));
+
+    if (!product) return sum;
+
+    return sum +
+      Number(product.price) *
+      Number(cart[id]);
+
+  }, 0);
+}
+
+function cartItemCount() {
+
+  return Object.values(cart)
+    .reduce((sum, qty) => sum + Number(qty), 0);
+}
 
 
 /* =========================
-   ESCAPE HTML
-   ========================= */
+   LOAD SUPABASE
+========================= */
 
-function escapeHTML(value) {
-  return String(value)
+async function loadSupabase() {
+
+  if (window.supabase) {
+
+    supabaseClient =
+      window.supabase.createClient(
+        SUPABASE_URL,
+        SUPABASE_KEY
+      );
+
+    return;
+  }
+
+  await new Promise((resolve, reject) => {
+
+    const script =
+      document.createElement("script");
+
+    script.src =
+      "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2";
+
+    script.onload = resolve;
+
+    script.onerror = reject;
+
+    document.head.appendChild(script);
+  });
+
+  supabaseClient =
+    window.supabase.createClient(
+      SUPABASE_URL,
+      SUPABASE_KEY
+    );
+}
+
+
+/* =========================
+   LOGO
+========================= */
+
+function setupLogo() {
+
+  const header =
+    document.querySelector("header");
+
+  if (!header) return;
+
+  const brand =
+    header.querySelector(".brand");
+
+  if (!brand) return;
+
+  const existing =
+    brand.querySelector(".storeLogo");
+
+  if (existing) return;
+
+  const img =
+    document.createElement("img");
+
+  img.className = "storeLogo";
+
+  img.src = STORE.logo;
+
+  img.alt = STORE.name + " Logo";
+
+  img.style.width = "55px";
+
+  img.style.height = "55px";
+
+  img.style.objectFit = "contain";
+
+  img.style.borderRadius = "50%";
+
+  img.onerror = function () {
+    this.style.display = "none";
+  };
+
+  brand.prepend(img);
+}
+
+
+/* =========================
+   STORE INFORMATION
+========================= */
+
+function setupStoreInfo() {
+
+  const main =
+    document.querySelector("main");
+
+  if (!main) return;
+
+  let box =
+    document.getElementById("storeInfo");
+
+  if (box) return;
+
+  box =
+    document.createElement("section");
+
+  box.id = "storeInfo";
+
+  box.style.margin = "15px auto";
+
+  box.style.maxWidth = "1100px";
+
+  box.style.padding = "18px";
+
+  box.style.borderRadius = "18px";
+
+  box.style.background =
+    "linear-gradient(135deg,#dcfce7,#fef9c3)";
+
+  box.innerHTML = `
+    <h2 style="margin:0 0 8px">
+      🛒 ${STORE.name}
+    </h2>
+
+    <p style="margin:5px 0">
+      🚚 Delivery within <b>${STORE.deliveryTime}</b>
+    </p>
+
+    <p style="margin:5px 0">
+      🚚 Delivery: <b>${STORE.deliveryHours}</b>
+    </p>
+
+    <p style="margin:5px 0">
+      🏪 Store: <b>${STORE.storeHours}</b>
+    </p>
+
+    <p style="margin:5px 0">
+      📅 Holiday: <b>1st and 15th of every month</b>
+    </p>
+
+    <p style="margin:5px 0">
+      📍 Delivery PIN: <b>${STORE.deliveryPin}</b>
+    </p>
+  `;
+
+  main.prepend(box);
+}
+
+
+/* =========================
+   QUICK ACTIONS
+========================= */
+
+function setupQuickActions() {
+
+  const main =
+    document.querySelector("main");
+
+  if (!main) return;
+
+  if ($("quickActions")) return;
+
+  const box =
+    document.createElement("div");
+
+  box.id = "quickActions";
+
+  box.style.display = "flex";
+
+  box.style.flexWrap = "wrap";
+
+  box.style.gap = "8px";
+
+  box.style.maxWidth = "1100px";
+
+  box.style.margin = "10px auto";
+
+  box.innerHTML = `
+
+    <button onclick="openCart()">
+      🛒 Order Now
+    </button>
+
+    <button onclick="showDeliveryInfo()">
+      🚚 Delivery
+    </button>
+
+    <button onclick="showPickupInfo()">
+      🏪 Pickup
+    </button>
+
+    <button onclick="showPaymentInfo()">
+      💳 Payment
+    </button>
+
+    <button onclick="showHelp()">
+      ❓ Help
+    </button>
+
+    <button onclick="openShopkeeperLogin()">
+      👨‍💼 Shopkeeper
+    </button>
+
+    <button onclick="openWhatsApp()">
+      💬 WhatsApp
+    </button>
+  `;
+
+  [...box.querySelectorAll("button")]
+    .forEach(btn => {
+
+      btn.style.padding = "10px 13px";
+
+      btn.style.borderRadius = "10px";
+
+      btn.style.border =
+        "1px solid #d1d5db";
+
+      btn.style.background = "white";
+
+      btn.style.fontWeight = "700";
+    });
+
+  main.insertBefore(
+    box,
+    main.children[1] || null
+  );
+}
+
+
+/* =========================
+   STORE INFO POPUPS
+========================= */
+
+function showDeliveryInfo() {
+
+  alert(
+`🚚 DELIVERY INFORMATION
+
+Delivery time:
+${STORE.deliveryHours}
+
+Delivery:
+Within ${STORE.deliveryTime}
+
+Delivery PIN:
+${STORE.deliveryPin}
+
+Delivery charge:
+FREE
+
+Minimum order:
+No minimum`
+  );
+}
+
+function showPickupInfo() {
+
+  alert(
+`🏪 STORE PICKUP
+
+Pickup is available.
+
+Store timing:
+${STORE.storeHours}
+
+Please place your order online and select:
+🏪 Store Pickup`
+  );
+}
+
+function showPaymentInfo() {
+
+  alert(
+`💳 PAYMENT OPTIONS
+
+UPI:
+${STORE.upi}
+
+Cash on Delivery:
+Available
+
+Pay at Store:
+Available for pickup`
+  );
+}
+
+function showHelp() {
+
+  alert(
+`❓ HELP
+
+1. Select products.
+2. Add them to your cart.
+3. Open Cart.
+4. Select Order Now.
+5. Enter your details.
+6. Choose Delivery or Pickup.
+7. Select payment method.
+8. Send the order.
+
+WhatsApp:
++91 ${STORE.whatsapp.slice(2)}`
+  );
+}
+
+function openWhatsApp() {
+
+  window.open(
+    "https://wa.me/" +
+    STORE.whatsapp,
+    "_blank"
+  );
+}
+
+
+/* =========================
+   SUPABASE PRODUCTS
+========================= */
+
+async function loadProductsFromDatabase() {
+
+  if (!supabaseClient) return;
+
+  const {
+    data,
+    error
+  } = await supabaseClient
+    .from("products")
+    .select("*")
+    .eq("available", true)
+    .order("created_at", {
+      ascending: true
+    });
+
+  if (error) {
+
+    console.error(error);
+
+    alert(
+      "Products could not be loaded from database."
+    );
+
+    return;
+  }
+
+  products = data || [];
+
+  renderCategories();
+
+  renderProducts();
+
+  renderShopkeeperProducts();
+}
+
+
+/* =========================
+   FALLBACK PRODUCTS
+========================= */
+
+function loadFallbackProducts() {
+
+  products = [
+
+    {
+      id: "demo1",
+      name: "Rice 5 kg",
+      price: 320,
+      category: "Staples",
+      emoji: "🍚",
+      available: true
+    },
+
+    {
+      id: "demo2",
+      name: "Wheat Flour 10 kg",
+      price: 280,
+      category: "Staples",
+      emoji: "🌾",
+      available: true
+    },
+
+    {
+      id: "demo3",
+      name: "Toor Dal 1 kg",
+      price: 140,
+      category: "Staples",
+      emoji: "🫘",
+      available: true
+    },
+
+    {
+      id: "demo4",
+      name: "Milk 1 L",
+      price: 60,
+      category: "Dairy",
+      emoji: "🥛",
+      available: true
+    },
+
+    {
+      id: "demo5",
+      name: "Bread",
+      price: 40,
+      category: "Dairy",
+      emoji: "🍞",
+      available: true
+    },
+
+    {
+      id: "demo6",
+      name: "Biscuits",
+      price: 30,
+      category: "Snacks",
+      emoji: "🍪",
+      available: true
+    },
+
+    {
+      id: "demo7",
+      name: "Tea 250 g",
+      price: 120,
+      category: "Beverages",
+      emoji: "🍵",
+      available: true
+    },
+
+    {
+      id: "demo8",
+      name: "Cooking Oil 1 L",
+      price: 150,
+      category: "Staples",
+      emoji: "🫗",
+      available: true
+    },
+
+    {
+      id: "demo9",
+      name: "Bath Soap",
+      price: 45,
+      category: "Household",
+      emoji: "🧼",
+      available: true
+    },
+
+    {
+      id: "demo10",
+      name: "Shampoo",
+      price: 90,
+      category: "Personal Care",
+      emoji: "🧴",
+      available: true
+    },
+
+    {
+      id: "demo11",
+      name: "Cold Drink",
+      price: 50,
+      category: "Beverages",
+      emoji: "🥤",
+      available: true
+    },
+
+    {
+      id: "demo12",
+      name: "Sugar 1 kg",
+      price: 52,
+      category: "Staples",
+      emoji: "🧂",
+      available: true
+    }
+  ];
+}
+
+
+/* =========================
+   CATEGORIES
+========================= */
+
+function renderCategories() {
+
+  const el =
+    $("categories");
+
+  if (!el) return;
+
+  const cats =
+    [
+      "All",
+      ...new Set(
+        products.map(
+          p => p.category || p.cat || "General"
+        )
+      )
+    ];
+
+  el.innerHTML =
+    cats.map(cat => `
+
+      <button
+        class="chip ${
+          cat === category
+            ? "active"
+            : ""
+        }"
+        onclick="setCategory('${String(cat).replace(/'/g,"\\'")}')">
+
+        ${cat}
+
+      </button>
+
+    `).join("");
+}
+
+function setCategory(cat) {
+
+  category = cat;
+
+  renderCategories();
+
+  renderProducts();
+}
+
+
+/* =========================
+   PRODUCT DISPLAY
+========================= */
+
+function renderProducts() {
+
+  const el =
+    $("products");
+
+  if (!el) return;
+
+  const search =
+    ($("search")?.value || "")
+      .toLowerCase()
+      .trim();
+
+  const list =
+    products.filter(p => {
+
+      const productCategory =
+        p.category ||
+        p.cat ||
+        "General";
+
+      const productName =
+        String(p.name || "")
+          .toLowerCase();
+
+      return (
+        (category === "All" ||
+          productCategory === category) &&
+        productName.includes(search)
+      );
+    });
+
+  if (!list.length) {
+
+    el.innerHTML =
+      "<p>No products found.</p>";
+
+    return;
+  }
+
+  el.innerHTML =
+    list.map(p => {
+
+      const image =
+        p.image_url
+          ? `<img
+              src="${escapeHtml(p.image_url)}"
+              alt="${escapeHtml(p.name)}"
+              style="
+                width:100%;
+                height:110px;
+                object-fit:contain;
+                border-radius:12px;
+              "
+            >`
+          : `<div
+              class="emoji"
+              style="
+                font-size:45px;
+                text-align:center;
+                padding:25px;
+              "
+            >
+              ${p.emoji || "🛒"}
+            </div>`;
+
+      return `
+
+        <article class="card">
+
+          ${image}
+
+          <h3>
+            ${escapeHtml(p.name)}
+          </h3>
+
+          <div class="price">
+            ${money(p.price)}
+          </div>
+
+          <button
+            class="add"
+            onclick="addToCart('${String(p.id)}')">
+
+            Add to Cart
+
+          </button>
+
+        </article>
+
+      `;
+
+    }).join("");
+}
+
+function escapeHtml(value) {
+
+  return String(value ?? "")
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
@@ -200,251 +752,43 @@ function escapeHTML(value) {
 
 
 /* =========================
-   SAVE PRODUCTS
-   ========================= */
+   CART
+========================= */
 
-function saveProducts() {
-  localStorage.setItem(
-    "shivamProducts",
-    JSON.stringify(products)
-  );
-}
-
-
-/* =========================
-   SAVE CART
-   ========================= */
-
-function save() {
-  localStorage.setItem(
-    "shivamCart",
-    JSON.stringify(cart)
-  );
-
-  renderCart();
-  updateCartCount();
-}
-
-
-/* =========================
-   ACTIVE PRODUCTS
-   ========================= */
-
-function activeProducts() {
-  return products.filter(
-    product => product.active !== false
-  );
-}
-
-
-/* =========================
-   CART COUNT
-   ========================= */
-
-function updateCartCount() {
-  const count = Object.values(cart)
-    .reduce(
-      (total, quantity) =>
-        total + Number(quantity),
-      0
-    );
-
-  if ($("cartCount")) {
-    $("cartCount").textContent = count;
-  }
-}
-
-
-/* =========================
-   CART TOTAL
-   ========================= */
-
-function cartTotal() {
-  return Object.keys(cart)
-    .reduce((total, id) => {
-
-      const product =
-        products.find(
-          p => p.id == id
-        );
-
-      if (!product) {
-        return total;
-      }
-
-      return total +
-        Number(product.price) *
-        Number(cart[id]);
-
-    }, 0);
-}
-
-
-/* =========================
-   CATEGORIES
-   ========================= */
-
-function renderCategories() {
-
-  const box =
-    $("categories");
-
-  if (!box) return;
-
-  const categories = [
-    "All",
-    ...new Set(
-      activeProducts()
-        .map(p => p.cat)
-        .filter(Boolean)
-    )
-  ];
-
-  box.innerHTML =
-    categories.map(cat => `
-
-      <button
-        class="chip ${cat === category ? "active" : ""}"
-        onclick="setCat('${escapeHTML(cat)}')">
-
-        ${escapeHTML(cat)}
-
-      </button>
-
-    `).join("");
-}
-
-
-/* =========================
-   CATEGORY
-   ========================= */
-
-function setCat(cat) {
-  category = cat;
-
-  renderCategories();
-  renderProducts();
-}
-
-
-/* =========================
-   RENDER PRODUCTS
-   ========================= */
-
-function renderProducts() {
-
-  const box =
-    $("products");
-
-  if (!box) return;
-
-  const search =
-    $("search")
-      ? $("search")
-          .value
-          .toLowerCase()
-          .trim()
-      : "";
-
-  const list =
-    activeProducts()
-      .filter(product => {
-
-        const categoryMatch =
-          category === "All" ||
-          product.cat === category;
-
-        const searchMatch =
-          product.name
-            .toLowerCase()
-            .includes(search);
-
-        return categoryMatch &&
-          searchMatch;
-      });
-
-
-  if (!list.length) {
-    box.innerHTML =
-      "<p>No products found.</p>";
-    return;
-  }
-
-
-  box.innerHTML =
-    list.map(product => `
-
-      <article class="card">
-
-        <div class="emoji">
-          ${product.emoji || "🛒"}
-        </div>
-
-        <h3>
-          ${escapeHTML(product.name)}
-        </h3>
-
-        <div class="price">
-          ₹${Number(product.price)}
-        </div>
-
-        <button
-          class="add"
-          onclick="add(${product.id})">
-
-          Add to Cart
-
-        </button>
-
-      </article>
-
-    `).join("");
-}
-
-
-/* =========================
-   ADD TO CART
-   ========================= */
-
-function add(id) {
-
-  const product =
-    products.find(
-      p => p.id == id
-    );
-
-  if (!product) return;
-
-  if (product.active === false) return;
+function addToCart(id) {
 
   cart[id] =
     Number(cart[id] || 0) + 1;
 
-  save();
+  saveCart();
+
+  renderCart();
+
+  alert("Product added to cart.");
 }
 
-
-/* =========================
-   CHANGE QUANTITY
-   ========================= */
-
-function change(id, amount) {
+function changeCart(id, change) {
 
   cart[id] =
-    Number(cart[id] || 0) +
-    Number(amount);
+    Number(cart[id] || 0) + change;
 
   if (cart[id] <= 0) {
     delete cart[id];
   }
 
-  save();
+  saveCart();
+
+  renderCart();
 }
 
+function clearCart() {
 
-/* =========================
-   RENDER CART
-   ========================= */
+  cart = {};
+
+  saveCart();
+
+  renderCart();
+}
 
 function renderCart() {
 
@@ -455,7 +799,6 @@ function renderCart() {
 
   const ids =
     Object.keys(cart);
-
 
   if (!ids.length) {
 
@@ -469,16 +812,18 @@ function renderCart() {
     return;
   }
 
-
   box.innerHTML =
     ids.map(id => {
 
-      const product =
+      const p =
         products.find(
-          p => p.id == id
+          x => String(x.id) === String(id)
         );
 
-      if (!product) return "";
+      if (!p) return "";
+
+      const qty =
+        Number(cart[id]);
 
       return `
 
@@ -487,28 +832,29 @@ function renderCart() {
           <div>
 
             <b>
-              ${product.emoji || "🛒"}
-              ${escapeHTML(product.name)}
+              ${p.emoji || "🛒"}
+              ${escapeHtml(p.name)}
             </b>
 
             <br>
 
-            ₹${Number(product.price) *
-              Number(cart[id])}
+            ${money(
+              Number(p.price) * qty
+            )}
 
           </div>
 
           <div class="qty">
 
             <button
-              onclick="change(${id}, -1)">
+              onclick="changeCart('${id}',-1)">
               −
             </button>
 
-            ${cart[id]}
+            ${qty}
 
             <button
-              onclick="change(${id}, 1)">
+              onclick="changeCart('${id}',1)">
               +
             </button>
 
@@ -520,100 +866,35 @@ function renderCart() {
 
     }).join("");
 
-
   if ($("total")) {
+
     $("total").textContent =
-      "₹" + cartTotal();
+      money(cartTotal());
   }
 }
 
-
-/* =========================
-   OPEN CART
-   ========================= */
-
 function openCart() {
 
-  closeCheckout();
-  closeShopkeeper();
+  const panel =
+    $("cartPanel");
 
-  if ($("cartPanel")) {
-    $("cartPanel")
-      .classList
-      .remove("hidden");
-  }
+  if (!panel) return;
+
+  panel.classList.remove("hidden");
 
   renderCart();
 }
 
-
-/* =========================
-   CLOSE CART
-   ========================= */
-
 function closeCart() {
 
-  if ($("cartPanel")) {
-    $("cartPanel")
-      .classList
-      .add("hidden");
-  }
+  $("cartPanel")
+    ?.classList.add("hidden");
 }
 
 
 /* =========================
-   OPEN CHECKOUT
-   ========================= */
-
-function openCheckout() {
-
-  if (!Object.keys(cart).length) {
-
-    alert(
-      "Please add products to your cart first."
-    );
-
-    return;
-  }
-
-  closeCart();
-  closeShopkeeper();
-
-  const checkout =
-    $("checkout");
-
-  if (!checkout) return;
-
-  checkout.classList.remove("hidden");
-
-  checkout.style.display = "grid";
-
-  customerLocation = null;
-
-  setupCheckout();
-}
-
-
-/* =========================
-   CLOSE CHECKOUT
-   ========================= */
-
-function closeCheckout() {
-
-  const checkout =
-    $("checkout");
-
-  if (!checkout) return;
-
-  checkout.classList.add("hidden");
-
-  checkout.style.display = "none";
-}
-
-
-/* =========================
-   CHECKOUT SETUP
-   ========================= */
+   CHECKOUT
+========================= */
 
 function setupCheckout() {
 
@@ -627,40 +908,27 @@ function setupCheckout() {
 
   if (!box) return;
 
+  if ($("advancedCheckout")) return;
 
-  /* Remove previous dynamic section */
-
-  const old =
-    $("checkoutExtra");
-
-  if (old) {
-    old.remove();
-  }
-
+  const sendButton =
+    $("sendOrder");
 
   const extra =
     document.createElement("div");
 
   extra.id =
-    "checkoutExtra";
-
+    "advancedCheckout";
 
   extra.innerHTML = `
 
-    <h3>
-      Order Type
-    </h3>
-
+    <h3>Order Type</h3>
 
     <label style="
-      display:flex;
-      align-items:center;
-      gap:10px;
+      display:block;
       padding:15px;
       border:1px solid #ddd;
       border-radius:12px;
       margin:8px 0;
-      cursor:pointer;
     ">
 
       <input
@@ -668,48 +936,56 @@ function setupCheckout() {
         name="orderType"
         value="delivery"
         checked
-        onchange="setOrderType('delivery')">
+        onchange="updateCheckoutType()">
 
       🚚 Home Delivery
 
     </label>
 
-
     <label style="
-      display:flex;
-      align-items:center;
-      gap:10px;
+      display:block;
       padding:15px;
       border:1px solid #ddd;
       border-radius:12px;
       margin:8px 0;
-      cursor:pointer;
     ">
 
       <input
         type="radio"
         name="orderType"
         value="pickup"
-        onchange="setOrderType('pickup')">
+        onchange="updateCheckoutType()">
 
       🏪 Store Pickup
 
     </label>
 
-
-    <div id="deliveryExtra">
+    <div id="deliveryFields">
 
       <textarea
-        id="address"
-        placeholder="Delivery address"></textarea>
-
+        id="orderAddress"
+        placeholder="Delivery address"
+        style="
+          width:100%;
+          padding:12px;
+          margin:7px 0;
+          border:1px solid #ddd;
+          border-radius:10px;
+          font:inherit;
+        "></textarea>
 
       <input
-        id="pin"
+        id="orderPin"
         placeholder="Delivery PIN code"
         inputmode="numeric"
-        maxlength="6">
-
+        style="
+          width:100%;
+          padding:12px;
+          margin:7px 0;
+          border:1px solid #ddd;
+          border-radius:10px;
+          font:inherit;
+        ">
 
       <button
         type="button"
@@ -729,15 +1005,6 @@ function setupCheckout() {
 
       </button>
 
-
-      <p
-        id="areaStatus"
-        style="
-          font-size:13px;
-          margin:5px 0;
-        "></p>
-
-
       <button
         type="button"
         onclick="getCustomerLocation()"
@@ -756,13 +1023,11 @@ function setupCheckout() {
 
       </button>
 
-
       <p
         id="locationStatus"
         style="
           font-size:13px;
           color:#475569;
-          margin:5px 0;
         ">
 
         Location not added
@@ -771,38 +1036,18 @@ function setupCheckout() {
 
     </div>
 
-
-    <div
-      id="pickupExtra"
-      style="display:none;">
-
-      <div style="
-        background:#f0fdf4;
-        padding:12px;
-        border-radius:10px;
-        margin:10px 0;
-      ">
-
-        🏪 <b>Store Pickup</b>
-
-        <br><br>
-
-        Store timing:
-        ${STORE.storeHours}
-
-      </div>
-
-    </div>
-
-
-    <h3>
-      Payment
-    </h3>
-
+    <h3>Payment</h3>
 
     <select
       id="paymentMethod"
-      onchange="showPayment()">
+      onchange="updatePaymentInfo()"
+      style="
+        width:100%;
+        padding:12px;
+        border:1px solid #ddd;
+        border-radius:10px;
+        font:inherit;
+      ">
 
       <option value="upi">
         💳 UPI
@@ -818,160 +1063,177 @@ function setupCheckout() {
 
     </select>
 
+    <div
+      id="paymentInfo"
+      style="
+        margin-top:10px;
+        padding:14px;
+        background:#f0fdf4;
+        border-radius:12px;
+      ">
 
-    <div id="paymentInfo"></div>
+    </div>
+
+    <button
+      type="button"
+      onclick="payByUPI()"
+      id="upiButton"
+      style="
+        width:100%;
+        padding:12px;
+        margin-top:8px;
+        border:0;
+        border-radius:10px;
+        background:#16a34a;
+        color:white;
+        font-weight:700;
+      ">
+
+      💳 Pay by UPI
+
+    </button>
 
   `;
 
+  box.insertBefore(
+    extra,
+    sendButton
+  );
 
-  const sendButton =
-    $("sendOrder");
+  updatePaymentInfo();
+}
 
-  if (sendButton) {
+function updateCheckoutType() {
 
-    box.insertBefore(
-      extra,
-      sendButton
-    );
+  const selected =
+    document.querySelector(
+      'input[name="orderType"]:checked'
+    )?.value;
+
+  const fields =
+    $("deliveryFields");
+
+  if (!fields) return;
+
+  if (selected === "pickup") {
+
+    fields.style.display = "none";
 
   } else {
 
-    box.appendChild(extra);
-  }
-
-
-  selectedOrderType =
-    "delivery";
-
-  showPayment();
-
-
-  /* Force checkout close button */
-
-  const closeButton =
-    $("closeCheckout");
-
-  if (closeButton) {
-
-    closeButton.style.zIndex =
-      "99999";
-
-    closeButton.style.pointerEvents =
-      "auto";
-
-    closeButton.onclick =
-      function(event) {
-
-        event.preventDefault();
-        event.stopPropagation();
-
-        closeCheckout();
-
-      };
+    fields.style.display = "block";
   }
 }
 
+function updatePaymentInfo() {
 
-/* =========================
-   ORDER TYPE
-   ========================= */
+  const method =
+    $("paymentMethod")?.value;
 
-function setOrderType(type) {
+  const info =
+    $("paymentInfo");
 
-  selectedOrderType =
-    type;
+  const upiButton =
+    $("upiButton");
 
+  if (!info) return;
 
-  const delivery =
-    $("deliveryExtra");
+  if (method === "upi") {
 
-  const pickup =
-    $("pickupExtra");
+    info.innerHTML = `
+      <b>UPI ID</b>
+      <br>
+      ${STORE.upi}
+    `;
 
+    if (upiButton) {
+      upiButton.style.display =
+        "block";
+    }
 
-  if (delivery) {
+  } else if (method === "cod") {
 
-    delivery.style.display =
-      type === "delivery"
-        ? "block"
-        : "none";
-  }
+    info.innerHTML =
+      "💵 Pay cash when your order is delivered.";
 
+    if (upiButton) {
+      upiButton.style.display =
+        "none";
+    }
 
-  if (pickup) {
+  } else {
 
-    pickup.style.display =
-      type === "pickup"
-        ? "block"
-        : "none";
+    info.innerHTML =
+      "🏪 Pay when you collect your order from the store.";
+
+    if (upiButton) {
+      upiButton.style.display =
+        "none";
+    }
   }
 }
 
 
 /* =========================
    DELIVERY AREA
-   ========================= */
+========================= */
 
 function checkDeliveryArea() {
 
   const pin =
-    $("pin");
+    $("orderPin")?.value.trim();
 
-  const status =
-    $("areaStatus");
+  if (!pin) {
 
-  if (!pin || !status) return;
+    alert("Please enter your PIN code.");
 
-
-  const value =
-    pin.value.trim();
-
-
-  if (value === STORE.deliveryPin) {
-
-    status.textContent =
-      "✅ Delivery is available in your area.";
-
-    status.style.color =
-      "#15803d";
-
-  } else {
-
-    status.textContent =
-      "❌ Delivery is available only for PIN " +
-      STORE.deliveryPin +
-      ".";
-
-    status.style.color =
-      "#dc2626";
+    return false;
   }
+
+  if (pin !== STORE.deliveryPin) {
+
+    alert(
+      "❌ Sorry, delivery is currently available only in PIN code " +
+      STORE.deliveryPin
+    );
+
+    return false;
+  }
+
+  alert(
+    "✅ Delivery available!\n\n" +
+    "Estimated delivery: " +
+    STORE.deliveryTime
+  );
+
+  return true;
 }
 
 
 /* =========================
    CUSTOMER LOCATION
-   ========================= */
+========================= */
 
 function getCustomerLocation() {
 
   const status =
     $("locationStatus");
 
-  if (!status) return;
-
-
   if (!navigator.geolocation) {
 
-    status.textContent =
-      "❌ Location is not supported on this device.";
+    if (status) {
+      status.textContent =
+        "❌ Location is not supported.";
+    }
 
     return;
   }
 
+  if (status) {
 
-  status.textContent =
-    "📍 Getting your location...";
-
+    status.textContent =
+      "📍 Getting your location...";
+  }
 
   navigator.geolocation.getCurrentPosition(
 
@@ -987,45 +1249,40 @@ function getCustomerLocation() {
 
         accuracy:
           position.coords.accuracy
-
       };
 
+      if (status) {
 
-      status.innerHTML =
-        "✅ Location added<br>" +
-        "Accuracy: about " +
-        Math.round(
-          position.coords.accuracy
-        ) +
-        " metres";
-
-      status.style.color =
-        "#15803d";
+        status.innerHTML =
+          "✅ Location added<br>" +
+          "Accuracy: about " +
+          Math.round(
+            position.coords.accuracy
+          ) +
+          " metres";
+      }
     },
-
 
     error => {
 
-      if (error.code === 1) {
+      console.error(error);
+
+      if (status) {
 
         status.textContent =
-          "❌ Location permission denied. Please allow location access.";
-
-      } else {
-
-        status.textContent =
-          "❌ Could not get your location.";
-
+          "❌ Location permission not allowed.";
       }
 
-      status.style.color =
-        "#dc2626";
+      alert(
+        "Please allow location permission in your browser."
+      );
     },
-
 
     {
       enableHighAccuracy: true,
+
       timeout: 15000,
+
       maximumAge: 0
     }
   );
@@ -1033,112 +1290,45 @@ function getCustomerLocation() {
 
 
 /* =========================
-   PAYMENT
-   ========================= */
+   UPI PAYMENT
+========================= */
 
-function showPayment() {
+function payByUPI() {
 
-  const select =
-    $("paymentMethod");
+  if (!cartItemCount()) {
 
-  const info =
-    $("paymentInfo");
+    alert(
+      "Please add products to your cart first."
+    );
 
-  if (!select || !info) return;
-
-
-  if (select.value === "upi") {
-
-    info.innerHTML = `
-
-      <div style="
-        background:#f0fdf4;
-        padding:12px;
-        border-radius:10px;
-        margin:8px 0;
-      ">
-
-        <b>UPI ID</b>
-
-        <br>
-
-        ${escapeHTML(STORE.upi)}
-
-        <br><br>
-
-        <button
-          type="button"
-          onclick="payByUPI()"
-          style="
-            width:100%;
-            padding:12px;
-            border:0;
-            border-radius:10px;
-            background:#16a34a;
-            color:white;
-            font-weight:700;
-          ">
-
-          💳 Pay by UPI
-
-        </button>
-
-      </div>
-
-    `;
-
-  } else if (select.value === "cod") {
-
-    info.innerHTML = `
-
-      <div style="
-        background:#fff7ed;
-        padding:12px;
-        border-radius:10px;
-        margin:8px 0;
-      ">
-
-        💵 <b>Cash on Delivery</b>
-
-        <br>
-
-        Pay when your order is delivered.
-
-      </div>
-
-    `;
-
-  } else {
-
-    info.innerHTML = `
-
-      <div style="
-        background:#eff6ff;
-        padding:12px;
-        border-radius:10px;
-        margin:8px 0;
-      ">
-
-        🏪 <b>Pay at Store</b>
-
-        <br>
-
-        Pay when collecting your order.
-
-      </div>
-
-    `;
+    return;
   }
+
+  const amount =
+    cartTotal();
+
+  const upiUrl =
+    "upi://pay" +
+    "?pa=" +
+    encodeURIComponent(STORE.upi) +
+    "&pn=" +
+    encodeURIComponent(STORE.name) +
+    "&am=" +
+    encodeURIComponent(amount.toFixed(2)) +
+    "&cu=INR";
+
+  window.location.href =
+    upiUrl;
 }
 
 
 /* =========================
-   UPI
-   ========================= */
+   SEND ORDER
+========================= */
 
-function payByUPI() {
+async function sendOrderToWhatsApp() {
 
-  if (!Object.keys(cart).length) {
+  if (!cartItemCount()) {
 
     alert(
       "Please add products first."
@@ -1147,58 +1337,11 @@ function payByUPI() {
     return;
   }
 
-
-  const amount =
-    cartTotal();
-
-
-  const url =
-    "upi://pay" +
-    "?pa=" +
-    encodeURIComponent(STORE.upi) +
-    "&pn=" +
-    encodeURIComponent(STORE.name) +
-    "&am=" +
-    encodeURIComponent(amount) +
-    "&cu=INR";
-
-
-  window.location.href =
-    url;
-}
-
-
-/* =========================
-   SEND ORDER TO WHATSAPP
-   ========================= */
-
-function sendOrderToWhatsApp() {
-
-  if (!Object.keys(cart).length) {
-
-    alert(
-      "Your cart is empty."
-    );
-
-    return;
-  }
-
-
   const name =
-    $("name")
-      ? $("name")
-          .value
-          .trim()
-      : "";
-
+    $("name")?.value.trim();
 
   const phone =
-    $("phone")
-      ? $("phone")
-          .value
-          .trim()
-      : "";
-
+    $("phone")?.value.trim();
 
   if (!name || !phone) {
 
@@ -1209,31 +1352,22 @@ function sendOrderToWhatsApp() {
     return;
   }
 
+  const orderType =
+    document.querySelector(
+      'input[name="orderType"]:checked'
+    )?.value || "delivery";
 
   let address = "";
+
   let pin = "";
 
-
-  if (
-    selectedOrderType ===
-    "delivery"
-  ) {
+  if (orderType === "delivery") {
 
     address =
-      $("address")
-        ? $("address")
-            .value
-            .trim()
-        : "";
-
+      $("orderAddress")?.value.trim();
 
     pin =
-      $("pin")
-        ? $("pin")
-            .value
-            .trim()
-        : "";
-
+      $("orderPin")?.value.trim();
 
     if (!address) {
 
@@ -1244,63 +1378,58 @@ function sendOrderToWhatsApp() {
       return;
     }
 
-
-    if (
-      pin !==
-      STORE.deliveryPin
-    ) {
+    if (!pin) {
 
       alert(
-        "Delivery is available only for PIN " +
-        STORE.deliveryPin +
-        "."
+        "Please enter your delivery PIN code."
+      );
+
+      return;
+    }
+
+    if (pin !== STORE.deliveryPin) {
+
+      alert(
+        "❌ Delivery is not available for this PIN code."
       );
 
       return;
     }
   }
 
-
   const payment =
-    $("paymentMethod")
-      ? $("paymentMethod").value
-      : "upi";
+    $("paymentMethod")?.value || "upi";
+
+  const paymentName = {
+
+    upi: "UPI",
+
+    cod: "Cash on Delivery",
+
+    store: "Pay at Store"
+
+  }[payment] || payment;
 
 
-  let paymentText =
-    "UPI";
-
-
-  if (payment === "cod") {
-    paymentText =
-      "Cash on Delivery";
-  }
-
-
-  if (payment === "store") {
-    paymentText =
-      "Pay at Store";
-  }
-
-
-  const items =
+  const lines =
     Object.keys(cart)
       .map(id => {
 
-        const product =
+        const p =
           products.find(
-            p => p.id == id
+            x =>
+              String(x.id) === String(id)
           );
 
-        if (!product) return "";
+        if (!p) return "";
 
         return (
-          product.name +
+          p.name +
           " x " +
           cart[id] +
-          " = ₹" +
-          (
-            Number(product.price) *
+          " = " +
+          money(
+            Number(p.price) *
             Number(cart[id])
           )
         );
@@ -1309,806 +1438,878 @@ function sendOrderToWhatsApp() {
       .filter(Boolean);
 
 
+  const total =
+    cartTotal();
+
+
   let locationText =
     "Location not shared";
+
+  let latitude = null;
+
+  let longitude = null;
 
 
   if (customerLocation) {
 
+    latitude =
+      customerLocation.latitude;
+
+    longitude =
+      customerLocation.longitude;
+
     locationText =
       "📍 Customer Location:\n" +
       "https://www.google.com/maps?q=" +
-      customerLocation.latitude +
+      latitude +
       "," +
-      customerLocation.longitude;
+      longitude;
   }
-
-
-  const orderType =
-    selectedOrderType ===
-    "delivery"
-      ? "Home Delivery"
-      : "Store Pickup";
 
 
   const message =
-`Hello ${STORE.name},
+`🛒 NEW ORDER
+${STORE.name}
 
-I want to place an order.
+Customer: ${name}
+Phone: ${phone}
 
-Customer:
-${name}
+Order Type: ${
+  orderType === "delivery"
+    ? "Home Delivery"
+    : "Store Pickup"
+}
 
-Phone:
-${phone}
+${orderType === "delivery"
+  ? "Address: " + address
+  : ""}
 
-Order Type:
-${orderType}
+${orderType === "delivery"
+  ? "PIN: " + pin
+  : ""}
 
-${address ? "Address:\n" + address + "\n" : ""}
-${pin ? "PIN:\n" + pin + "\n" : ""}
+Payment: ${paymentName}
 
 Products:
-${items.join("\n")}
+${lines.join("\n")}
 
-Total:
-₹${cartTotal()}
+Delivery Charge: FREE
 
-Payment:
-${paymentText}
-
-${selectedOrderType === "delivery"
-  ? "Delivery time: " + STORE.deliveryTime
-  : "Store Pickup"}
+Total: ${money(total)}
 
 ${locationText}
 
+Please confirm this order.
+
 Thank you.`;
 
+  /* SAVE ORDER TO SUPABASE */
 
-  const whatsapp =
+  let savedOrder = null;
+
+  try {
+
+    if (supabaseClient) {
+
+      const {
+        data,
+        error
+      } = await supabaseClient
+        .from("orders")
+        .insert({
+
+          customer_name: name,
+
+          customer_phone: phone,
+
+          order_type: orderType,
+
+          address:
+            orderType === "delivery"
+              ? address
+              : null,
+
+          pin_code:
+            orderType === "delivery"
+              ? pin
+              : null,
+
+          latitude,
+
+          longitude,
+
+          payment_method: payment,
+
+          total_amount: total,
+
+          status: "new"
+
+        })
+        .select()
+        .single();
+
+      if (error) {
+
+        console.error(
+          "Order database error:",
+          error
+        );
+
+      } else {
+
+        savedOrder = data;
+      }
+    }
+
+  } catch (error) {
+
+    console.error(error);
+  }
+
+
+  /* OPEN WHATSAPP */
+
+  const whatsappUrl =
     "https://wa.me/" +
     STORE.whatsapp +
     "?text=" +
-    encodeURIComponent(
-      message
-    );
-
+    encodeURIComponent(message);
 
   window.open(
-    whatsapp,
+    whatsappUrl,
     "_blank"
+  );
+
+
+  /* CLEAR CART */
+
+  cart = {};
+
+  saveCart();
+
+  renderCart();
+
+  $("checkout")
+    ?.classList.add("hidden");
+
+  $("cartPanel")
+    ?.classList.add("hidden");
+
+  alert(
+    "✅ Order prepared successfully!"
   );
 }
 
 
-/* =========================================================
-   SHOPKEEPER SECTION
-   ========================================================= */
-
-
 /* =========================
-   CREATE SHOPKEEPER BUTTON
-   ========================= */
+   SHOPKEEPER LOGIN
+========================= */
 
-function createShopkeeperButton() {
+function openShopkeeperLogin() {
 
-  /*
-     Remove any old shopkeeper button
-     created by an earlier version.
-  */
+  let modal =
+    $("shopkeeperLogin");
 
-  document
-    .querySelectorAll(
-      ".shivam-shopkeeper-button"
-    )
-    .forEach(button => {
-      button.remove();
-    });
+  if (modal) {
 
-
-  const quickActions =
-    $("quickActions");
-
-
-  /*
-     If quickActions exists,
-     put the button inside it.
-  */
-
-  if (quickActions) {
-
-    const button =
-      document.createElement("button");
-
-    button.type =
-      "button";
-
-    button.className =
-      "shivam-shopkeeper-button";
-
-
-    button.textContent =
-      "👨‍💼 Shopkeeper - Add Products";
-
-
-    button.style.cssText = `
-      width:100%;
-      display:block;
-      padding:13px;
-      margin-top:8px;
-      border:2px solid #16a34a;
-      border-radius:12px;
-      background:#ffffff;
-      color:#166534;
-      font-weight:800;
-      font-size:15px;
-      cursor:pointer;
-      position:relative;
-      z-index:10;
-    `;
-
-
-    button.onclick =
-      function(event) {
-
-        event.preventDefault();
-        event.stopPropagation();
-
-        openShopkeeper();
-
-      };
-
-
-    quickActions.appendChild(
-      button
-    );
+    modal.classList.remove("hidden");
 
     return;
   }
 
+  modal =
+    document.createElement("div");
 
-  /*
-     If quickActions does NOT exist,
-     create a completely new visible
-     shopkeeper area.
-  */
+  modal.id =
+    "shopkeeperLogin";
 
-  const main =
-    document.querySelector("main");
+  modal.style.position = "fixed";
 
+  modal.style.inset = "0";
 
-  if (!main) return;
+  modal.style.background = "#0009";
 
+  modal.style.zIndex = "100";
 
-  const section =
-    document.createElement("section");
+  modal.style.display = "grid";
 
+  modal.style.placeItems = "center";
 
-  section.id =
-    "shopkeeperQuickSection";
+  modal.style.padding = "20px";
 
-
-  section.style.cssText = `
-    max-width:1100px;
-    margin:12px auto;
-    padding:0 5%;
-  `;
-
-
-  section.innerHTML = `
-
-    <button
-      type="button"
-      class="shivam-shopkeeper-button"
-      onclick="openShopkeeper()"
-      style="
-        width:100%;
-        display:block;
-        padding:13px;
-        border:2px solid #16a34a;
-        border-radius:12px;
-        background:white;
-        color:#166534;
-        font-weight:800;
-        font-size:15px;
-        cursor:pointer;
-      ">
-
-      👨‍💼 Shopkeeper - Add Products
-
-    </button>
-
-  `;
-
-
-  const hero =
-    document.querySelector(".hero");
-
-
-  if (hero) {
-
-    hero.after(section);
-
-  } else {
-
-    main.prepend(section);
-
-  }
-}
-
-
-/* =========================
-   QUICK ACTIONS
-   ========================= */
-
-function createQuickActions() {
-
-  const old =
-    $("quickActions");
-
-
-  if (old) {
-
-    /*
-       Make sure Shopkeeper button
-       is always added.
-    */
-
-    createShopkeeperButton();
-
-    return;
-  }
-
-
-  const main =
-    document.querySelector("main");
-
-
-  if (!main) return;
-
-
-  const section =
-    document.createElement("section");
-
-
-  section.id =
-    "quickActions";
-
-
-  section.style.cssText = `
-    max-width:1100px;
-    margin:15px auto;
-    padding:0 5%;
-  `;
-
-
-  section.innerHTML = `
+  modal.innerHTML = `
 
     <div style="
-      display:grid;
-      grid-template-columns:
-      repeat(2,minmax(0,1fr));
-      gap:8px;
+      background:white;
+      width:min(430px,100%);
+      padding:24px;
+      border-radius:18px;
+      position:relative;
     ">
 
       <button
-        type="button"
-        onclick="openCheckout()"
+        onclick="closeShopkeeperLogin()"
         style="
-          padding:12px;
+          position:absolute;
+          right:15px;
+          top:15px;
           border:0;
-          border-radius:12px;
-          background:#16a34a;
-          color:white;
-          font-weight:700;
-          cursor:pointer;
+          background:#eee;
+          border-radius:8px;
+          padding:8px;
         ">
-
-        🛒 Order Now
-
-      </button>
-
-
-      <button
-        type="button"
-        onclick="showDeliveryInfo()"
-        style="
-          padding:12px;
-          border:0;
-          border-radius:12px;
-          background:#0f766e;
-          color:white;
-          font-weight:700;
-          cursor:pointer;
-        ">
-
-        🚚 Delivery
-
-      </button>
-
-
-      <button
-        type="button"
-        onclick="showPickupInfo()"
-        style="
-          padding:12px;
-          border:0;
-          border-radius:12px;
-          background:#2563eb;
-          color:white;
-          font-weight:700;
-          cursor:pointer;
-        ">
-
-        🏪 Pickup
-
-      </button>
-
-
-      <button
-        type="button"
-        onclick="showPaymentInfo()"
-        style="
-          padding:12px;
-          border:0;
-          border-radius:12px;
-          background:#7c3aed;
-          color:white;
-          font-weight:700;
-          cursor:pointer;
-        ">
-
-        💳 Payment
-
-      </button>
-
-
-      <button
-        type="button"
-        onclick="showHelp()"
-        style="
-          padding:12px;
-          border:0;
-          border-radius:12px;
-          background:#475569;
-          color:white;
-          font-weight:700;
-          cursor:pointer;
-        ">
-
-        ❓ Help
-
-      </button>
-
-
-      <button
-        type="button"
-        onclick="openWhatsApp()"
-        style="
-          padding:12px;
-          border:0;
-          border-radius:12px;
-          background:#16a34a;
-          color:white;
-          font-weight:700;
-          cursor:pointer;
-        ">
-
-        💬 WhatsApp
-
-      </button>
-
-    </div>
-
-  `;
-
-
-  const hero =
-    document.querySelector(".hero");
-
-
-  if (hero) {
-
-    hero.after(section);
-
-  } else {
-
-    main.prepend(section);
-
-  }
-
-
-  /*
-     IMPORTANT:
-     Always add Shopkeeper button
-     AFTER quick actions.
-  */
-
-  createShopkeeperButton();
-}
-
-
-/* =========================
-   OPEN SHOPKEEPER
-   ========================= */
-
-function openShopkeeper() {
-
-  /*
-     Close everything else first.
-  */
-
-  closeCart();
-  closeCheckout();
-
-
-  const password =
-    prompt(
-      "👨‍💼 Enter Shopkeeper Password"
-    );
-
-
-  if (
-    password !==
-    STORE.shopkeeperPassword
-  ) {
-
-    if (password !== null) {
-
-      alert(
-        "❌ Incorrect password."
-      );
-
-    }
-
-    return;
-  }
-
-
-  let panel =
-    $("shopkeeper");
-
-
-  if (!panel) {
-
-    createShopkeeperPanel();
-
-    panel =
-      $("shopkeeper");
-  }
-
-
-  if (!panel) return;
-
-
-  panel.classList.remove(
-    "hidden"
-  );
-
-
-  panel.style.display =
-    "grid";
-
-
-  panel.style.zIndex =
-    "99999";
-
-
-  renderAdminProducts();
-}
-
-
-/* =========================
-   CREATE SHOPKEEPER PANEL
-   ========================= */
-
-function createShopkeeperPanel() {
-
-  /*
-     Remove old panel if it somehow exists.
-  */
-
-  const old =
-    $("shopkeeper");
-
-  if (old) {
-    old.remove();
-  }
-
-
-  const panel =
-    document.createElement("div");
-
-
-  panel.id =
-    "shopkeeper";
-
-  panel.className =
-    "modal";
-
-
-  panel.style.zIndex =
-    "99999";
-
-
-  panel.innerHTML = `
-
-    <div
-      class="modalBox shopkeeperBox"
-      style="
-        max-height:90vh;
-        overflow-y:auto;
-        position:relative;
-      ">
-
-
-      <button
-        id="closeShopkeeper"
-        class="close"
-        type="button"
-        aria-label="Close">
 
         ✕
 
       </button>
 
+      <h2>👨‍💼 Shopkeeper Login</h2>
 
-      <h2>
-        👨‍💼 Shopkeeper
-      </h2>
-
-
-      <p style="
-        color:#64748b;
-      ">
-
-        Add and manage products.
-
+      <p>
+        Login to manage your products.
       </p>
 
+      <input
+        id="shopEmail"
+        type="email"
+        placeholder="Shopkeeper email"
+        style="
+          width:100%;
+          padding:13px;
+          margin:7px 0;
+          border:1px solid #ddd;
+          border-radius:10px;
+        "
+      >
 
       <input
-        id="adminProductName"
-        type="text"
-        placeholder="Product name">
-
-
-      <input
-        id="adminProductPrice"
-        type="number"
-        min="0"
-        placeholder="Price">
-
-
-      <input
-        id="adminProductCategory"
-        type="text"
-        placeholder="Category">
-
-
-      <input
-        id="adminProductEmoji"
-        type="text"
-        placeholder="Emoji e.g. 🍚">
-
+        id="shopPassword"
+        type="password"
+        placeholder="Password"
+        style="
+          width:100%;
+          padding:13px;
+          margin:7px 0;
+          border:1px solid #ddd;
+          border-radius:10px;
+        "
+      >
 
       <button
-        id="addShopProductButton"
-        type="button"
-        class="primary"
+        onclick="shopkeeperLogin()"
         style="
-          margin-top:5px;
+          width:100%;
+          padding:13px;
+          border:0;
+          border-radius:10px;
+          background:#16a34a;
+          color:white;
+          font-weight:800;
+          margin-top:8px;
+        ">
+
+        🔐 Login
+
+      </button>
+
+      <p
+        id="shopLoginStatus"
+        style="
+          font-size:13px;
+          color:#475569;
+        ">
+      </p>
+
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+}
+
+function closeShopkeeperLogin() {
+
+  $("shopkeeperLogin")
+    ?.remove();
+}
+
+
+/* =========================
+   SHOPKEEPER AUTH
+========================= */
+
+async function shopkeeperLogin() {
+
+  const email =
+    $("shopEmail")?.value.trim();
+
+  const password =
+    $("shopPassword")?.value;
+
+  const status =
+    $("shopLoginStatus");
+
+  if (!email || !password) {
+
+    if (status) {
+      status.textContent =
+        "Please enter email and password.";
+    }
+
+    return;
+  }
+
+  if (!supabaseClient) {
+
+    alert(
+      "Database connection is not ready."
+    );
+
+    return;
+  }
+
+  if (status) {
+    status.textContent =
+      "Logging in...";
+  }
+
+  const {
+    data,
+    error
+  } =
+    await supabaseClient.auth
+      .signInWithPassword({
+
+        email,
+
+        password
+
+      });
+
+  if (error) {
+
+    console.error(error);
+
+    if (status) {
+
+      status.textContent =
+        "❌ Login failed: " +
+        error.message;
+    }
+
+    return;
+  }
+
+  const user =
+    data.user;
+
+  const {
+    data: profile,
+    error: profileError
+  } =
+    await supabaseClient
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .single();
+
+  if (
+    profileError ||
+    !profile ||
+    profile.role !== "shopkeeper"
+  ) {
+
+    await supabaseClient.auth.signOut();
+
+    if (status) {
+
+      status.textContent =
+        "❌ This account is not a shopkeeper account.";
+    }
+
+    return;
+  }
+
+  shopkeeperUser =
+    user;
+
+  closeShopkeeperLogin();
+
+  openShopkeeperPanel();
+}
+
+
+/* =========================
+   SHOPKEEPER PANEL
+========================= */
+
+function openShopkeeperPanel() {
+
+  let panel =
+    $("shopkeeperPanel");
+
+  if (panel) {
+
+    panel.classList.remove("hidden");
+
+    renderShopkeeperProducts();
+
+    return;
+  }
+
+  panel =
+    document.createElement("div");
+
+  panel.id =
+    "shopkeeperPanel";
+
+  panel.style.position = "fixed";
+
+  panel.style.inset = "0";
+
+  panel.style.background = "#0009";
+
+  panel.style.zIndex = "90";
+
+  panel.style.overflow = "auto";
+
+  panel.innerHTML = `
+
+    <div style="
+      background:white;
+      width:min(600px,100%);
+      min-height:100%;
+      margin:auto;
+      padding:20px;
+    ">
+
+      <div style="
+        display:flex;
+        justify-content:space-between;
+        align-items:center;
+      ">
+
+        <h2>
+          👨‍💼 Shopkeeper
+        </h2>
+
+        <button
+          onclick="closeShopkeeperPanel()"
+          style="
+            border:0;
+            background:#eee;
+            border-radius:8px;
+            padding:9px;
+          ">
+
+          ✕
+
+        </button>
+
+      </div>
+
+      <p>
+        Manage products in your online store.
+      </p>
+
+      <input
+        id="productName"
+        placeholder="Product name"
+        style="
+          width:100%;
+          padding:12px;
+          margin:6px 0;
+          border:1px solid #ddd;
+          border-radius:10px;
+        "
+      >
+
+      <input
+        id="productPrice"
+        type="number"
+        placeholder="Price"
+        style="
+          width:100%;
+          padding:12px;
+          margin:6px 0;
+          border:1px solid #ddd;
+          border-radius:10px;
+        "
+      >
+
+      <input
+        id="productCategory"
+        placeholder="Category e.g. Staples"
+        style="
+          width:100%;
+          padding:12px;
+          margin:6px 0;
+          border:1px solid #ddd;
+          border-radius:10px;
+        "
+      >
+
+      <input
+        id="productEmoji"
+        placeholder="Emoji e.g. 🍚"
+        style="
+          width:100%;
+          padding:12px;
+          margin:6px 0;
+          border:1px solid #ddd;
+          border-radius:10px;
+        "
+      >
+
+      <input
+        id="productImage"
+        placeholder="Product image URL (optional)"
+        style="
+          width:100%;
+          padding:12px;
+          margin:6px 0;
+          border:1px solid #ddd;
+          border-radius:10px;
+        "
+      >
+
+      <button
+        id="saveProductButton"
+        onclick="saveProduct()"
+        style="
+          width:100%;
+          padding:13px;
+          border:0;
+          border-radius:10px;
+          background:#16a34a;
+          color:white;
+          font-weight:800;
+          margin:8px 0;
         ">
 
         ➕ Add Product
 
       </button>
 
-
-      <h3
+      <button
+        id="cancelEditButton"
+        onclick="cancelProductEdit()"
         style="
-          margin-top:22px;
+          display:none;
+          width:100%;
+          padding:12px;
+          border:0;
+          border-radius:10px;
+          background:#64748b;
+          color:white;
+          font-weight:700;
+          margin-bottom:10px;
         ">
 
-        Products
+        Cancel Edit
 
+      </button>
+
+      <hr>
+
+      <h3>
+        Products
       </h3>
 
+      <div id="shopkeeperProducts"></div>
 
-      <div
-        id="adminProducts">
-      </div>
+      <button
+        onclick="shopkeeperLogout()"
+        style="
+          width:100%;
+          padding:13px;
+          border:0;
+          border-radius:10px;
+          background:#dc2626;
+          color:white;
+          font-weight:800;
+          margin-top:20px;
+        ">
 
+        🔐 Logout
+
+      </button>
 
     </div>
-
   `;
 
+  document.body.appendChild(panel);
 
-  document.body.appendChild(
-    panel
-  );
+  renderShopkeeperProducts();
+}
 
+function closeShopkeeperPanel() {
 
-  const closeButton =
-    $("closeShopkeeper");
-
-
-  if (closeButton) {
-
-    closeButton.onclick =
-      function(event) {
-
-        event.preventDefault();
-        event.stopPropagation();
-
-        closeShopkeeper();
-
-      };
-  }
-
-
-  const addButton =
-    $("addShopProductButton");
-
-
-  if (addButton) {
-
-    addButton.onclick =
-      addShopProduct;
-
-  }
-
-
-  /*
-     Also allow tapping outside
-     the shopkeeper box to close.
-  */
-
-  panel.addEventListener(
-    "click",
-    function(event) {
-
-      if (
-        event.target === panel
-      ) {
-
-        closeShopkeeper();
-
-      }
-
-    }
-  );
+  $("shopkeeperPanel")
+    ?.remove();
 }
 
 
 /* =========================
-   CLOSE SHOPKEEPER
-   ========================= */
+   SAVE PRODUCT
+========================= */
 
-function closeShopkeeper() {
+async function saveProduct() {
 
-  const panel =
-    $("shopkeeper");
+  if (!shopkeeperUser) {
 
-  if (!panel) return;
+    alert(
+      "Please login as shopkeeper."
+    );
+
+    return;
+  }
+
+  const name =
+    $("productName")
+      ?.value.trim();
+
+  const price =
+    Number(
+      $("productPrice")
+        ?.value
+    );
+
+  const category =
+    $("productCategory")
+      ?.value.trim();
+
+  const emoji =
+    $("productEmoji")
+      ?.value.trim() ||
+    "🛒";
+
+  const image =
+    $("productImage")
+      ?.value.trim() ||
+    null;
 
 
-  panel.classList.add(
-    "hidden"
-  );
+  if (!name) {
 
+    alert(
+      "Enter product name."
+    );
 
-  panel.style.display =
-    "none";
-}
+    return;
+  }
 
+  if (!price || price < 0) {
 
-/* =========================
-   ADMIN PRODUCT LIST
-   ========================= */
+    alert(
+      "Enter a valid price."
+    );
 
-function renderAdminProducts() {
+    return;
+  }
 
-  const box =
-    $("adminProducts");
+  if (!category) {
 
-  if (!box) return;
-
-
-  if (!products.length) {
-
-    box.innerHTML =
-      "<p>No products available.</p>";
+    alert(
+      "Enter product category."
+    );
 
     return;
   }
 
 
+  let result;
+
+
+  if (editingProductId) {
+
+    result =
+      await supabaseClient
+        .from("products")
+        .update({
+
+          name,
+
+          price,
+
+          category,
+
+          emoji,
+
+          image_url: image,
+
+          available: true
+
+        })
+        .eq(
+          "id",
+          editingProductId
+        );
+
+  } else {
+
+    result =
+      await supabaseClient
+        .from("products")
+        .insert({
+
+          name,
+
+          price,
+
+          category,
+
+          emoji,
+
+          image_url: image,
+
+          available: true
+
+        });
+  }
+
+
+  if (result.error) {
+
+    console.error(
+      result.error
+    );
+
+    alert(
+      "Could not save product:\n" +
+      result.error.message
+    );
+
+    return;
+  }
+
+
+  alert(
+    editingProductId
+      ? "✅ Product updated."
+      : "✅ Product added."
+  );
+
+
+  cancelProductEdit();
+
+  await loadProductsFromDatabase();
+}
+
+function cancelProductEdit() {
+
+  editingProductId = null;
+
+  if ($("productName"))
+    $("productName").value = "";
+
+  if ($("productPrice"))
+    $("productPrice").value = "";
+
+  if ($("productCategory"))
+    $("productCategory").value = "";
+
+  if ($("productEmoji"))
+    $("productEmoji").value = "";
+
+  if ($("productImage"))
+    $("productImage").value = "";
+
+  if ($("saveProductButton")) {
+
+    $("saveProductButton")
+      .textContent =
+      "➕ Add Product";
+  }
+
+  if ($("cancelEditButton")) {
+
+    $("cancelEditButton")
+      .style.display =
+      "none";
+  }
+}
+
+
+/* =========================
+   SHOPKEEPER PRODUCT LIST
+========================= */
+
+function renderShopkeeperProducts() {
+
+  const box =
+    $("shopkeeperProducts");
+
+  if (!box) return;
+
+  if (!products.length) {
+
+    box.innerHTML =
+      "<p>No products yet.</p>";
+
+    return;
+  }
+
   box.innerHTML =
-    products.map(product => `
+    products.map(p => `
 
       <div style="
-        display:flex;
-        justify-content:space-between;
-        align-items:center;
-        gap:10px;
-        padding:12px 0;
-        border-bottom:1px solid #eee;
+        border:1px solid #ddd;
+        border-radius:12px;
+        padding:12px;
+        margin:8px 0;
       ">
 
-        <div style="
-          min-width:0;
-          flex:1;
-        ">
+        <b>
+          ${p.emoji || "🛒"}
+          ${escapeHtml(p.name)}
+        </b>
 
-          <b>
-            ${product.emoji || "🛒"}
-            ${escapeHTML(product.name)}
-          </b>
+        <br>
 
-          <br>
+        ${money(p.price)}
 
-          ₹${Number(product.price)}
+        <br>
 
-          <br>
-
-          <small>
-
-            ${escapeHTML(
-              product.cat || "General"
-            )}
-
-            <br>
-
-            ${
-              product.active !== false
-                ? "✅ Available"
-                : "❌ Hidden"
-            }
-
-          </small>
-
-        </div>
-
+        <small>
+          ${escapeHtml(
+            p.category ||
+            "General"
+          )}
+        </small>
 
         <div style="
           display:flex;
-          gap:5px;
-          flex-wrap:wrap;
+          gap:8px;
+          margin-top:8px;
         ">
 
           <button
-            type="button"
-            onclick="editProduct(${product.id})"
-            title="Edit">
+            onclick="editProduct('${String(p.id)}')"
+            style="
+              flex:1;
+              padding:9px;
+              border:0;
+              border-radius:8px;
+              background:#2563eb;
+              color:white;
+            ">
 
-            ✏️
-
-          </button>
-
-
-          <button
-            type="button"
-            onclick="toggleProduct(${product.id})"
-            title="Show/Hide">
-
-            ${
-              product.active !== false
-                ? "🙈"
-                : "👁️"
-            }
+            ✏️ Edit
 
           </button>
 
-
           <button
-            type="button"
-            onclick="deleteProduct(${product.id})"
-            title="Delete">
+            onclick="deleteProduct('${String(p.id)}')"
+            style="
+              flex:1;
+              padding:9px;
+              border:0;
+              border-radius:8px;
+              background:#dc2626;
+              color:white;
+            ">
 
-            🗑️
+            🗑️ Delete
 
           </button>
 
@@ -2121,473 +2322,346 @@ function renderAdminProducts() {
 
 
 /* =========================
-   ADD PRODUCT
-   ========================= */
-
-function addShopProduct() {
-
-  const name =
-    $("adminProductName")
-      ? $("adminProductName")
-          .value
-          .trim()
-      : "";
-
-
-  const price =
-    $("adminProductPrice")
-      ? Number(
-          $("adminProductPrice").value
-        )
-      : 0;
-
-
-  const category =
-    $("adminProductCategory")
-      ? $("adminProductCategory")
-          .value
-          .trim()
-      : "";
-
-
-  const emoji =
-    $("adminProductEmoji")
-      ? $("adminProductEmoji")
-          .value
-          .trim()
-      : "";
-
-
-  if (!name) {
-
-    alert(
-      "Please enter product name."
-    );
-
-    return;
-  }
-
-
-  if (
-    !Number.isFinite(price) ||
-    price < 0
-  ) {
-
-    alert(
-      "Please enter a valid price."
-    );
-
-    return;
-  }
-
-
-  if (!category) {
-
-    alert(
-      "Please enter a category."
-    );
-
-    return;
-  }
-
-
-  products.push({
-
-    id:
-      Date.now(),
-
-    name:
-      name,
-
-    price:
-      price,
-
-    cat:
-      category,
-
-    emoji:
-      emoji || "🛒",
-
-    active:
-      true
-
-  });
-
-
-  saveProducts();
-
-
-  $("adminProductName").value =
-    "";
-
-  $("adminProductPrice").value =
-    "";
-
-  $("adminProductCategory").value =
-    "";
-
-  $("adminProductEmoji").value =
-    "";
-
-
-  renderAdminProducts();
-
-  renderCategories();
-
-  renderProducts();
-
-
-  alert(
-    "✅ Product added successfully!"
-  );
-}
-
-
-/* =========================
    EDIT PRODUCT
-   ========================= */
+========================= */
 
 function editProduct(id) {
 
-  const product =
+  const p =
     products.find(
-      p => p.id == id
+      x => String(x.id) === String(id)
     );
 
-  if (!product) return;
+  if (!p) return;
 
+  editingProductId =
+    p.id;
 
-  const name =
-    prompt(
-      "Product name:",
-      product.name
-    );
+  $("productName").value =
+    p.name || "";
 
-  if (name === null) return;
+  $("productPrice").value =
+    p.price || "";
 
+  $("productCategory").value =
+    p.category || "";
 
-  const price =
-    prompt(
-      "Price:",
-      product.price
-    );
+  $("productEmoji").value =
+    p.emoji || "";
 
-  if (price === null) return;
+  $("productImage").value =
+    p.image_url || "";
 
+  $("saveProductButton")
+    .textContent =
+    "💾 Update Product";
 
-  const category =
-    prompt(
-      "Category:",
-      product.cat
-    );
+  $("cancelEditButton")
+    .style.display =
+    "block";
 
-  if (category === null) return;
-
-
-  const emoji =
-    prompt(
-      "Emoji:",
-      product.emoji || "🛒"
-    );
-
-  if (emoji === null) return;
-
-
-  if (
-    !name.trim() ||
-    !Number.isFinite(
-      Number(price)
-    )
-  ) {
-
-    alert(
-      "Invalid product details."
-    );
-
-    return;
-  }
-
-
-  product.name =
-    name.trim();
-
-  product.price =
-    Number(price);
-
-  product.cat =
-    category.trim();
-
-  product.emoji =
-    emoji.trim() || "🛒";
-
-
-  saveProducts();
-
-  renderAdminProducts();
-  renderCategories();
-  renderProducts();
-}
-
-
-/* =========================
-   HIDE / SHOW PRODUCT
-   ========================= */
-
-function toggleProduct(id) {
-
-  const product =
-    products.find(
-      p => p.id == id
-    );
-
-  if (!product) return;
-
-
-  product.active =
-    product.active === false;
-
-
-  saveProducts();
-
-  renderAdminProducts();
-  renderCategories();
-  renderProducts();
+  $("shopkeeperPanel")
+    ?.scrollTo({
+      top: 0,
+      behavior: "smooth"
+    });
 }
 
 
 /* =========================
    DELETE PRODUCT
-   ========================= */
+========================= */
 
-function deleteProduct(id) {
+async function deleteProduct(id) {
 
-  const product =
+  if (!shopkeeperUser) {
+
+    alert(
+      "Please login first."
+    );
+
+    return;
+  }
+
+  const p =
     products.find(
-      p => p.id == id
+      x => String(x.id) === String(id)
     );
 
-  if (!product) return;
+  if (!p) return;
 
-
-  const answer =
+  const confirmed =
     confirm(
-      'Delete "' +
-      product.name +
-      '"?'
+      "Delete " +
+      p.name +
+      "?"
     );
 
+  if (!confirmed) return;
 
-  if (!answer) return;
+  const {
+    error
+  } =
+    await supabaseClient
+      .from("products")
+      .delete()
+      .eq("id", id);
 
+  if (error) {
 
-  products =
-    products.filter(
-      p => p.id != id
+    alert(
+      "Could not delete product:\n" +
+      error.message
     );
 
-
-  delete cart[id];
-
-
-  saveProducts();
-  save();
-
-
-  renderAdminProducts();
-  renderCategories();
-  renderProducts();
-
+    return;
+  }
 
   alert(
     "✅ Product deleted."
   );
+
+  await loadProductsFromDatabase();
 }
 
 
 /* =========================
-   INFORMATION
-   ========================= */
+   SHOPKEEPER LOGOUT
+========================= */
 
-function showDeliveryInfo() {
+async function shopkeeperLogout() {
 
-  alert(
-`🚚 DELIVERY
+  if (supabaseClient) {
 
-Delivery time:
-${STORE.deliveryTime}
+    await supabaseClient.auth.signOut();
+  }
 
-Delivery hours:
-${STORE.deliveryHours}
+  shopkeeperUser = null;
 
-Delivery PIN:
-${STORE.deliveryPin}
-
-Delivery charge:
-FREE
-
-Minimum order:
-NO MINIMUM ORDER
-
-Holiday:
-1st and 15th of every month`
-  );
-}
-
-
-function showPickupInfo() {
+  closeShopkeeperPanel();
 
   alert(
-`🏪 STORE PICKUP
-
-Pickup is available.
-
-Store timing:
-${STORE.storeHours}
-
-Place your order online and collect it from the store.`
-  );
-}
-
-
-function showPaymentInfo() {
-
-  alert(
-`💳 PAYMENT
-
-UPI:
-${STORE.upi}
-
-Cash on Delivery:
-Available
-
-Pay at Store:
-Available
-
-Delivery charge:
-FREE`
-  );
-}
-
-
-function showHelp() {
-
-  alert(
-`❓ HOW TO ORDER
-
-1. Add products to Cart.
-
-2. Open Cart.
-
-3. Tap Place Order.
-
-4. Enter your name and phone number.
-
-5. Select Home Delivery or Store Pickup.
-
-6. For delivery, enter PIN ${STORE.deliveryPin}.
-
-7. You can share your location.
-
-8. Select payment method.
-
-9. Tap Send Order.
-
-WhatsApp:
-+91 72319 27995`
+    "Shopkeeper logged out."
   );
 }
 
 
 /* =========================
-   WHATSAPP
-   ========================= */
+   AUTH SESSION
+========================= */
 
-function openWhatsApp() {
+async function checkShopkeeperSession() {
 
-  window.open(
-    "https://wa.me/" +
-    STORE.whatsapp,
-    "_blank"
+  if (!supabaseClient) return;
+
+  const {
+    data
+  } =
+    await supabaseClient.auth
+      .getSession();
+
+  if (!data.session) {
+
+    shopkeeperUser = null;
+
+    return;
+  }
+
+  const user =
+    data.session.user;
+
+  const {
+    data: profile
+  } =
+    await supabaseClient
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .maybeSingle();
+
+  if (
+    profile &&
+    profile.role === "shopkeeper"
+  ) {
+
+    shopkeeperUser =
+      user;
+  }
+}
+
+
+/* =========================
+   SEARCH
+========================= */
+
+function setupSearch() {
+
+  const search =
+    $("search");
+
+  if (!search) return;
+
+  search.addEventListener(
+    "input",
+    renderProducts
   );
 }
 
 
 /* =========================
-   EVENT CONNECTIONS
-   ========================= */
+   BUTTON CONNECTIONS
+========================= */
 
-if ($("search")) {
+function setupButtons() {
 
-  $("search").oninput =
-    renderProducts;
-}
+  $("cartBtn")?.addEventListener(
+    "click",
+    openCart
+  );
 
+  $("closeCart")?.addEventListener(
+    "click",
+    closeCart
+  );
 
-if ($("cartBtn")) {
+  $("closeCheckout")?.addEventListener(
+    "click",
+    () => {
+      $("checkout")
+        ?.classList.add("hidden");
+    }
+  );
 
-  $("cartBtn").onclick =
-    openCart;
-}
+  $("orderBtn")?.addEventListener(
+    "click",
+    () => {
 
+      if (!cartItemCount()) {
 
-if ($("closeCart")) {
+        alert(
+          "Please add products first."
+        );
 
-  $("closeCart").onclick =
-    closeCart;
-}
+        return;
+      }
 
+      setupCheckout();
 
-if ($("orderBtn")) {
+      $("checkout")
+        ?.classList.remove("hidden");
+    }
+  );
 
-  $("orderBtn").onclick =
-    openCheckout;
-}
-
-
-if ($("closeCheckout")) {
-
-  $("closeCheckout").onclick =
-    closeCheckout;
-}
-
-
-if ($("sendOrder")) {
-
-  $("sendOrder").onclick =
-    sendOrderToWhatsApp;
+  $("sendOrder")?.addEventListener(
+    "click",
+    sendOrderToWhatsApp
+  );
 }
 
 
 /* =========================
-   START APP
-   ========================= */
+   HOLIDAY CHECK
+========================= */
 
-function startShivamStore() {
+function isHoliday() {
 
-  renderCategories();
+  const day =
+    new Date().getDate();
 
-  renderProducts();
+  return STORE.holidays.includes(day);
+}
 
-  renderCart();
+function showHolidayNotice() {
+
+  if (!isHoliday()) return;
+
+  const notice =
+    document.createElement("div");
+
+  notice.style.maxWidth =
+    "1100px";
+
+  notice.style.margin =
+    "10px auto";
+
+  notice.style.padding =
+    "14px";
+
+  notice.style.borderRadius =
+    "12px";
+
+  notice.style.background =
+    "#fef3c7";
+
+  notice.style.color =
+    "#92400e";
+
+  notice.style.fontWeight =
+    "700";
+
+  notice.textContent =
+    "📅 Today is a store holiday. Orders may be processed on the next working day.";
+
+  document
+    .querySelector("main")
+    ?.prepend(notice);
+}
+
+
+/* =========================
+   INITIALIZE
+========================= */
+
+async function initApp() {
+
+  setupLogo();
+
+  setupStoreInfo();
+
+  setupQuickActions();
+
+  setupButtons();
+
+  setupSearch();
+
+  setupCheckout();
 
   updateCartCount();
 
-  saveProducts();
+  renderCart();
 
-  /*
-     Create the quick buttons.
-     This ALWAYS creates the
-     Shopkeeper button afterward.
-  */
+  showHolidayNotice();
 
-  createQuickActions();
 
+  try {
+
+    await loadSupabase();
+
+    await checkShopkeeperSession();
+
+    await loadProductsFromDatabase();
+
+  } catch (error) {
+
+    console.error(
+      "Supabase initialization failed:",
+      error
+    );
+
+    loadFallbackProducts();
+
+    renderCategories();
+
+    renderProducts();
+
+    renderShopkeeperProducts();
+  }
 }
 
 
 /* =========================
    START
-   ========================= */
+========================= */
 
 if (
   document.readyState ===
@@ -2596,11 +2670,10 @@ if (
 
   document.addEventListener(
     "DOMContentLoaded",
-    startShivamStore
+    initApp
   );
 
 } else {
 
-  startShivamStore();
-
+  initApp();
 }
