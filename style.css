@@ -643,3 +643,18 @@ main > section:not(.hero):not(.quick-actions) {
   }
 
 }
+#shopkeeper {
+  z-index: 100 !important;
+}
+
+#checkout {
+  z-index: 40 !important;
+}
+
+#cartPanel {
+  z-index: 30 !important;
+}
+
+.shopkeeperBox {
+  z-index: 101 !important;
+}
