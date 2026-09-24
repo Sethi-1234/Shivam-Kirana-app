@@ -713,3 +713,39 @@ input[type="radio"] {
 ::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
 }
+.logo {
+  width: 64px;
+  height: 64px;
+  object-fit: contain;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.brand {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.brand h1 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.brand small {
+  color: #64748b;
+}
+
+@media (max-width: 600px) {
+  .logo {
+    width: 52px;
+    height: 52px;
+  }
+
+  .brand h1 {
+    font-size: 17px;
+  }
+
+  .brand small {
+    font-size: 12px;
+  }
