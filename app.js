@@ -1221,39 +1221,46 @@ Thank you.`;
    SHOPKEEPER
    ========================================= */
 
+
+/* =========================================
+   FIXED SHOPKEEPER
+   ========================================= */
+
 function openShopkeeper() {
 
-  const password =
-    prompt(
-      "Enter shopkeeper password:"
-    );
-
-
-  /*
-    Change this password.
-    Current password: 1234
-  */
-
-  if(password !== "1234") {
-
-    alert(
-      "Incorrect password."
-    );
-
-    return;
-
+  // Close cart
+  if ($("cartPanel")) {
+    $("cartPanel").classList.add("hidden");
   }
 
+  // Close checkout
+  if ($("checkout")) {
+    $("checkout").classList.add("hidden");
+  }
 
+  // Ask shopkeeper password
+  const password = prompt(
+    "Enter shopkeeper password:"
+  );
+
+  if (password !== "1234") {
+    alert("Incorrect password.");
+    return;
+  }
+
+  // Open shopkeeper only
   $("shopkeeper")
     .classList
     .remove("hidden");
 
-
+  // Show all products
   renderAdminProducts();
-
 }
 
+
+/* =========================================
+   CLOSE SHOPKEEPER
+   ========================================= */
 
 function closeShopkeeper() {
 
@@ -1263,6 +1270,296 @@ function closeShopkeeper() {
 
 }
 
+
+/* =========================================
+   SHOW PRODUCTS TO SHOPKEEPER
+   ========================================= */
+
+function renderAdminProducts() {
+
+  const box =
+    $("adminProducts");
+
+  if (!box) return;
+
+  if (!products.length) {
+
+    box.innerHTML =
+      "<p>No products available.</p>";
+
+    return;
+  }
+
+  box.innerHTML =
+    products.map(p => `
+
+      <div class="adminProduct">
+
+        <div>
+
+          <b>
+            ${p.emoji || "🛒"}
+            ${p.name}
+          </b>
+
+          <br>
+
+          ₹${p.price}
+
+          <br>
+
+          <small>
+            Category: ${p.cat}
+          </small>
+
+          <br>
+
+          <small>
+            ${
+              p.active !== false
+                ? "✅ Available"
+                : "❌ Hidden"
+            }
+          </small>
+
+        </div>
+
+        <div>
+
+          <button
+            onclick="editProduct(${p.id})">
+            ✏️
+          </button>
+
+          <button
+            onclick="toggleProduct(${p.id})">
+
+            ${
+              p.active !== false
+                ? "🙈"
+                : "👁️"
+            }
+
+          </button>
+
+          <button
+            onclick="deleteProduct(${p.id})">
+            🗑️
+          </button>
+
+        </div>
+
+      </div>
+
+    `).join("");
+}
+
+
+/* =========================================
+   ADD PRODUCT
+   ========================================= */
+
+function addShopProduct() {
+
+  const name =
+    $("adminProductName")
+      .value
+      .trim();
+
+  const price =
+    Number(
+      $("adminProductPrice")
+        .value
+    );
+
+  const category =
+    $("adminProductCategory")
+      .value
+      .trim();
+
+  const emoji =
+    $("adminProductEmoji")
+      .value
+      .trim() || "🛒";
+
+
+  if (!name || !price || !category) {
+
+    alert(
+      "Please enter product name, price and category."
+    );
+
+    return;
+  }
+
+
+  products.push({
+
+    id: Date.now(),
+
+    name: name,
+
+    price: price,
+
+    cat: category,
+
+    emoji: emoji,
+
+    active: true
+
+  });
+
+
+  saveProducts();
+
+  renderAdminProducts();
+
+  renderCategories();
+
+  renderProducts();
+
+
+  $("adminProductName").value = "";
+
+  $("adminProductPrice").value = "";
+
+  $("adminProductCategory").value = "";
+
+  $("adminProductEmoji").value = "";
+
+
+  alert(
+    "✅ Product added successfully."
+  );
+}
+
+
+/* =========================================
+   EDIT PRODUCT
+   ========================================= */
+
+function editProduct(id) {
+
+  const product =
+    products.find(
+      p => p.id === id
+    );
+
+  if (!product) return;
+
+
+  const name =
+    prompt(
+      "Product name:",
+      product.name
+    );
+
+  if (name === null) return;
+
+
+  const price =
+    prompt(
+      "Price:",
+      product.price
+    );
+
+  if (price === null) return;
+
+
+  const category =
+    prompt(
+      "Category:",
+      product.cat
+    );
+
+  if (category === null) return;
+
+
+  product.name =
+    name.trim();
+
+  product.price =
+    Number(price);
+
+  product.cat =
+    category.trim();
+
+
+  saveProducts();
+
+  renderAdminProducts();
+
+  renderCategories();
+
+  renderProducts();
+}
+
+
+/* =========================================
+   HIDE / SHOW PRODUCT
+   ========================================= */
+
+function toggleProduct(id) {
+
+  const product =
+    products.find(
+      p => p.id === id
+    );
+
+  if (!product) return;
+
+
+  product.active =
+    product.active === false;
+
+
+  saveProducts();
+
+  renderAdminProducts();
+
+  renderCategories();
+
+  renderProducts();
+}
+
+
+/* =========================================
+   DELETE PRODUCT
+   ========================================= */
+
+function deleteProduct(id) {
+
+  const product =
+    products.find(
+      p => p.id === id
+    );
+
+  if (!product) return;
+
+
+  if (
+    !confirm(
+      `Delete "${product.name}"?`
+    )
+  ) {
+    return;
+  }
+
+
+  products =
+    products.filter(
+      p => p.id !== id
+    );
+
+
+  saveProducts();
+
+  renderAdminProducts();
+
+  renderCategories();
+
+  renderProducts();
+}
 
 /* =========================================
    ADD PRODUCT
