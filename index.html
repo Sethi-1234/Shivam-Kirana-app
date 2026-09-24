@@ -1,45 +1,426 @@
 <!doctype html>
 <html lang="en">
+
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#16a34a">
-  <meta name="google-site-verification" content="wD5m-KggU0ukfhlJQ2xydoBMdtCV9u3oS9LAwqwxZ7w">
-<link rel="manifest" href="manifest.json">
-<title>Shivam Kirana Store</title>
-<link rel="stylesheet" href="style.css">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+
+  <meta name="theme-color" content="#166534">
+
+  <meta name="google-site-verification"
+        content="wD5m-KggU0ukfhlJQ2xydoBMdtCV9u3oS9LAwqwxZ7w">
+
+  <link rel="manifest" href="manifest.json">
+
+  <title>Shivam Kirana Store</title>
+
+  <meta name="description"
+        content="Shivam Kirana Store - Grocery delivery and store pickup.">
+
+  <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
+
 <header>
-  <div class="brand"><span>🛒</span><div><h1>Shivam Kirana Store</h1><small>Fresh groceries at your doorstep</small></div></div>
-  <button id="cartBtn" class="cart">🛒 Cart <b id="cartCount">0</b></button>
+
+  <div class="brand">
+
+    <img
+      src="logo.png"
+      alt="Shivam Kirana Store"
+      class="logo">
+
+    <div>
+      <h1>Shivam Kirana Store</h1>
+      <small>Fresh groceries at your doorstep</small>
+    </div>
+
+  </div>
+
+  <button id="cartBtn" class="cart">
+    🛒 Cart
+    <b id="cartCount">0</b>
+  </button>
+
 </header>
+
+
 <main>
+
   <section class="hero">
-    <div><h2>Daily groceries, made easy.</h2><p>Shop your essentials and place your order quickly.</p></div>
+
+    <img
+      src="logo.png"
+      alt="Shivam Kirana Store Logo"
+      class="heroLogo">
+
+    <div>
+
+      <h2>Daily groceries, made easy.</h2>
+
+      <p>
+        Order online and get your groceries
+        delivered within 30 minutes.
+      </p>
+
+      <div class="storeStatus">
+        🚚 Delivery: 10 AM – 7 PM
+        <br>
+        🏪 Store: 9 AM – 8 PM
+      </div>
+
+    </div>
+
   </section>
-  <div class="search"><input id="search" placeholder="Search products..."> 🔎</div>
-  <nav id="categories" class="chips"></nav>
-  <section><h2>Products</h2><div id="products" class="grid"></div></section>
+
+
+  <section class="quick-actions" id="quickActions">
+
+    <button onclick="openCart()">
+      🛒 Order Now
+    </button>
+
+    <button onclick="showDeliveryInfo()">
+      🚚 Delivery
+    </button>
+
+    <button onclick="showPickupInfo()">
+      🏪 Pickup
+    </button>
+
+    <button onclick="showPaymentInfo()">
+      💳 Payment
+    </button>
+
+    <button onclick="showHelp()">
+      ❓ Help
+    </button>
+
+    <button onclick="openWhatsApp()">
+      💬 WhatsApp
+    </button>
+
+  </section>
+
+
+  <div class="search">
+
+    <input
+      id="search"
+      type="search"
+      placeholder="Search products...">
+
+    🔎
+
+  </div>
+
+
+  <nav
+    id="categories"
+    class="chips">
+  </nav>
+
+
+  <section>
+
+    <h2>Products</h2>
+
+    <div
+      id="products"
+      class="grid">
+    </div>
+
+  </section>
+
+
+  <!-- SHOPKEEPER -->
+
+  <section class="shopkeeper-section">
+
+    <button
+      class="shopkeeperButton"
+      onclick="openShopkeeper()">
+
+      👨‍💼 Shopkeeper
+
+    </button>
+
+  </section>
+
 </main>
 
-<div id="cartPanel" class="drawer hidden">
-  <div class="drawerHead"><h2>Your Cart</h2><button id="closeCart">✕</button></div>
+
+<!-- CART -->
+
+<div
+  id="cartPanel"
+  class="drawer hidden">
+
+  <div class="drawerHead">
+
+    <h2>Your Cart</h2>
+
+    <button id="closeCart">
+      ✕
+    </button>
+
+  </div>
+
   <div id="cartItems"></div>
-  <div class="total">Total: <strong id="total">₹0</strong></div>
-  <button id="orderBtn" class="primary">Place Order on WhatsApp</button>
+
+  <div class="total">
+
+    Total:
+    <strong id="total">₹0</strong>
+
+  </div>
+
+  <button
+    id="orderBtn"
+    class="primary">
+
+    🛒 Place Order
+
+  </button>
+
 </div>
 
-<div id="checkout" class="modal hidden">
+
+<!-- CHECKOUT -->
+
+<div
+  id="checkout"
+  class="modal hidden">
+
   <div class="modalBox">
-    <button id="closeCheckout" class="close">✕</button>
-    <h2>Delivery Details</h2>
-    <input id="name" placeholder="Your name">
-    <input id="phone" placeholder="Phone number" inputmode="tel">
-    <textarea id="address" placeholder="Delivery address"></textarea>
-    <button id="sendOrder" class="primary">Send Order</button>
+
+    <button
+      id="closeCheckout"
+      class="close">
+
+      ✕
+
+    </button>
+
+    <h2>Place Your Order</h2>
+
+    <p class="smallText">
+      Fill your details and send your order.
+    </p>
+
+
+    <input
+      id="name"
+      placeholder="Your name">
+
+
+    <input
+      id="phone"
+      placeholder="Phone number"
+      inputmode="tel">
+
+
+    <div class="orderType">
+
+      <h3>Order Type</h3>
+
+      <label>
+
+        <input
+          type="radio"
+          name="orderType"
+          value="delivery"
+          checked
+          onchange="updateOrderType()">
+
+        🚚 Home Delivery
+
+      </label>
+
+
+      <label>
+
+        <input
+          type="radio"
+          name="orderType"
+          value="pickup"
+          onchange="updateOrderType()">
+
+        🏪 Store Pickup
+
+      </label>
+
+    </div>
+
+
+    <div id="deliveryFields">
+
+      <textarea
+        id="address"
+        placeholder="Delivery address">
+      </textarea>
+
+
+      <input
+        id="pin"
+        placeholder="Delivery PIN code"
+        inputmode="numeric"
+        maxlength="6">
+
+
+      <button
+        type="button"
+        class="secondaryButton"
+        onclick="checkDeliveryPin()">
+
+        📍 Check Delivery Area
+
+      </button>
+
+
+      <p id="pinStatus"></p>
+
+
+      <button
+        type="button"
+        class="locationButton"
+        onclick="getCustomerLocation()">
+
+        📍 Use My Location
+
+      </button>
+
+
+      <p
+        id="locationStatus"
+        class="smallText">
+
+        Location not added
+
+      </p>
+
+    </div>
+
+
+    <h3>Payment</h3>
+
+    <select id="paymentMethod"
+            onchange="updatePayment()">
+
+      <option value="upi">
+        💳 UPI
+      </option>
+
+      <option value="cod">
+        💵 Cash on Delivery
+      </option>
+
+      <option value="store">
+        🏪 Pay at Store
+      </option>
+
+    </select>
+
+
+    <div
+      id="upiBox"
+      class="upiBox">
+
+      <b>UPI ID</b>
+
+      <div>
+        Sethishivam04@ybl
+      </div>
+
+      <button
+        type="button"
+        onclick="payByUPI()"
+        class="upiButton">
+
+        💳 Pay by UPI
+
+      </button>
+
+    </div>
+
+
+    <button
+      id="sendOrder"
+      class="primary">
+
+      💬 Send Order
+
+    </button>
+
   </div>
+
 </div>
+
+
+<!-- SHOPKEEPER PANEL -->
+
+<div
+  id="shopkeeper"
+  class="modal hidden">
+
+  <div class="modalBox shopkeeperBox">
+
+    <button
+      class="close"
+      onclick="closeShopkeeper()">
+
+      ✕
+
+    </button>
+
+    <h2>👨‍💼 Shopkeeper</h2>
+
+    <p class="smallText">
+      Manage products on this device.
+    </p>
+
+
+    <input
+      id="adminProductName"
+      placeholder="Product name">
+
+
+    <input
+      id="adminProductPrice"
+      placeholder="Price"
+      type="number">
+
+
+    <input
+      id="adminProductCategory"
+      placeholder="Category">
+
+
+    <input
+      id="adminProductEmoji"
+      placeholder="Emoji e.g. 🍚">
+
+
+    <button
+      class="primary"
+      onclick="addShopProduct()">
+
+      ➕ Add Product
+
+    </button>
+
+
+    <h3>Products</h3>
+
+    <div id="adminProducts"></div>
+
+  </div>
+
+</div>
+
+
 <script src="app.js"></script>
+
 </body>
 </html>
