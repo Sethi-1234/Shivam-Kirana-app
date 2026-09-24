@@ -134,19 +134,6 @@
   </section>
 
 
-  <!-- SHOPKEEPER -->
-
-  <section class="shopkeeper-section">
-
-    <button
-      class="shopkeeperButton"
-      onclick="openShopkeeper()">
-
-      👨‍💼 Shopkeeper
-
-    </button>
-
-  </section>
 
 </main>
 
@@ -358,66 +345,6 @@
 </div>
 
 
-<!-- SHOPKEEPER PANEL -->
-
-<div
-  id="shopkeeper"
-  class="modal hidden">
-
-  <div class="modalBox shopkeeperBox">
-
-    <button
-      class="close"
-      onclick="closeShopkeeper()">
-
-      ✕
-
-    </button>
-
-    <h2>👨‍💼 Shopkeeper</h2>
-
-    <p class="smallText">
-      Manage products on this device.
-    </p>
-
-
-    <input
-      id="adminProductName"
-      placeholder="Product name">
-
-
-    <input
-      id="adminProductPrice"
-      placeholder="Price"
-      type="number">
-
-
-    <input
-      id="adminProductCategory"
-      placeholder="Category">
-
-
-    <input
-      id="adminProductEmoji"
-      placeholder="Emoji e.g. 🍚">
-
-
-    <button
-      class="primary"
-      onclick="addShopProduct()">
-
-      ➕ Add Product
-
-    </button>
-
-
-    <h3>Products</h3>
-
-    <div id="adminProducts"></div>
-
-  </div>
-
-</div>
 
 
 <script src="app.js"></script>
