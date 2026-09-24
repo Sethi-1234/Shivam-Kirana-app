@@ -13,6 +13,6 @@ A fresh, standalone grocery-store PWA/web app.
 
 ## Before launch
 Replace the WhatsApp destination in `app.js` with the store's WhatsApp number in international format:
-`https://wa.me/91XXXXXXXXXX?text=...`
+`https://wa.me/916367668835?text=...`
 
 Add real products, prices, store address, delivery rules, and branding.
