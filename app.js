@@ -1,64 +1,209 @@
 /* =========================================
-   SHIVAM KIRANA STORE - COMPLETE APP
+   SHIVAM KIRANA STORE
    ========================================= */
 
 const STORE = {
+
   name: "Shivam Kirana Store",
+
   whatsapp: "917231927995",
+
   upi: "Sethishivam04@ybl",
+
   deliveryPin: "301604",
+
   deliveryFee: 0,
-  minOrder: 0,
-  pickup: true
+
+  deliveryStart: 10,
+
+  deliveryEnd: 19,
+
+  storeStart: 9,
+
+  storeEnd: 20,
+
+  deliveryMinutes: 30
+
 };
 
 
 /* =========================================
-   PRODUCTS
+   DEFAULT PRODUCTS
    ========================================= */
 
-const products = [
-  {id:1,name:"Rice 5 kg",price:320,cat:"Staples",emoji:"🍚"},
-  {id:2,name:"Wheat Flour 5 kg",price:260,cat:"Staples",emoji:"🌾"},
-  {id:3,name:"Sugar 1 kg",price:48,cat:"Staples",emoji:"🧂"},
-  {id:4,name:"Toor Dal 1 kg",price:140,cat:"Staples",emoji:"🫘"},
-  {id:5,name:"Milk 1 L",price:60,cat:"Dairy",emoji:"🥛"},
-  {id:6,name:"Bread",price:40,cat:"Dairy",emoji:"🍞"},
-  {id:7,name:"Biscuits",price:30,cat:"Snacks",emoji:"🍪"},
-  {id:8,name:"Tea 250 g",price:120,cat:"Beverages",emoji:"🍵"},
-  {id:9,name:"Cooking Oil 1 L",price:150,cat:"Staples",emoji:"🫗"},
-  {id:10,name:"Bath Soap",price:45,cat:"Household",emoji:"🧼"},
-  {id:11,name:"Shampoo",price:90,cat:"Personal Care",emoji:"🧴"},
-  {id:12,name:"Cold Drink",price:50,cat:"Beverages",emoji:"🥤"}
+const defaultProducts = [
+
+  {
+    id: 1,
+    name: "Rice 5 kg",
+    price: 320,
+    cat: "Staples",
+    emoji: "🍚",
+    active: true
+  },
+
+  {
+    id: 2,
+    name: "Wheat Flour 5 kg",
+    price: 260,
+    cat: "Staples",
+    emoji: "🌾",
+    active: true
+  },
+
+  {
+    id: 3,
+    name: "Sugar 1 kg",
+    price: 48,
+    cat: "Staples",
+    emoji: "🧂",
+    active: true
+  },
+
+  {
+    id: 4,
+    name: "Toor Dal 1 kg",
+    price: 140,
+    cat: "Staples",
+    emoji: "🫘",
+    active: true
+  },
+
+  {
+    id: 5,
+    name: "Milk 1 L",
+    price: 60,
+    cat: "Dairy",
+    emoji: "🥛",
+    active: true
+  },
+
+  {
+    id: 6,
+    name: "Bread",
+    price: 40,
+    cat: "Dairy",
+    emoji: "🍞",
+    active: true
+  },
+
+  {
+    id: 7,
+    name: "Biscuits",
+    price: 30,
+    cat: "Snacks",
+    emoji: "🍪",
+    active: true
+  },
+
+  {
+    id: 8,
+    name: "Tea 250 g",
+    price: 120,
+    cat: "Beverages",
+    emoji: "🍵",
+    active: true
+  },
+
+  {
+    id: 9,
+    name: "Cooking Oil 1 L",
+    price: 150,
+    cat: "Staples",
+    emoji: "🫗",
+    active: true
+  },
+
+  {
+    id: 10,
+    name: "Bath Soap",
+    price: 45,
+    cat: "Household",
+    emoji: "🧼",
+    active: true
+  },
+
+  {
+    id: 11,
+    name: "Shampoo",
+    price: 90,
+    cat: "Personal Care",
+    emoji: "🧴",
+    active: true
+  },
+
+  {
+    id: 12,
+    name: "Cold Drink",
+    price: 50,
+    cat: "Beverages",
+    emoji: "🥤",
+    active: true
+  }
+
 ];
+
+
+/* =========================================
+   LOAD PRODUCTS
+   ========================================= */
+
+let products =
+  JSON.parse(
+    localStorage.getItem(
+      "shivamProducts"
+    )
+  ) || defaultProducts;
 
 
 /* =========================================
    CART
    ========================================= */
 
-let cart = JSON.parse(
-  localStorage.getItem("shivamCart") || "{}"
-);
+let cart =
+  JSON.parse(
+    localStorage.getItem(
+      "shivamCart"
+    ) || "{}"
+  );
+
 
 let category = "All";
+
 let customerLocation = null;
+
 let orderType = "delivery";
-let paymentMethod = "cod";
+
+let paymentMethod = "upi";
 
 
 /* =========================================
    SHORTCUT
    ========================================= */
 
-const $ = id => document.getElementById(id);
+const $ =
+  id => document.getElementById(id);
+
+
+/* =========================================
+   SAVE PRODUCTS
+   ========================================= */
+
+function saveProducts() {
+
+  localStorage.setItem(
+    "shivamProducts",
+    JSON.stringify(products)
+  );
+
+}
 
 
 /* =========================================
    SAVE CART
    ========================================= */
 
-function save() {
+function saveCart() {
 
   localStorage.setItem(
     "shivamCart",
@@ -68,10 +213,12 @@ function save() {
   renderCart();
 
   $("cartCount").textContent =
-    Object.values(cart).reduce(
-      (a,b) => a + b,
-      0
-    );
+    Object.values(cart)
+      .reduce(
+        (a,b) => a + b,
+        0
+      );
+
 }
 
 
@@ -81,20 +228,24 @@ function save() {
 
 function cartTotal() {
 
-  return Object.keys(cart).reduce(
-    (sum,id) => {
+  return Object.keys(cart)
+    .reduce(
+      (total,id) => {
 
-      const product =
-        products.find(
-          p => p.id == id
-        );
+        const p =
+          products.find(
+            x => x.id == id
+          );
 
-      return sum +
-        product.price * cart[id];
+        if(!p) return total;
 
-    },
-    0
-  );
+        return total +
+          p.price * cart[id];
+
+      },
+      0
+    );
+
 }
 
 
@@ -104,35 +255,57 @@ function cartTotal() {
 
 function renderCategories() {
 
+  const activeProducts =
+    products.filter(
+      p => p.active !== false
+    );
+
   const cats = [
+
     "All",
+
     ...new Set(
-      products.map(
+      activeProducts.map(
         p => p.cat
       )
     )
+
   ];
 
+
   $("categories").innerHTML =
+
     cats.map(
+
       c => `
+
         <button
-          class="chip ${c === category ? "active" : ""}"
-          onclick="setCat('${c}')">
+          class="chip ${
+            c === category
+              ? "active"
+              : ""
+          }"
+          onclick="setCategory('${c}')">
+
           ${c}
+
         </button>
+
       `
+
     ).join("");
+
 }
 
 
-function setCat(c) {
+function setCategory(c) {
 
   category = c;
 
   renderCategories();
 
   renderProducts();
+
 }
 
 
@@ -142,24 +315,38 @@ function setCat(c) {
 
 function renderProducts() {
 
-  const q =
-    $("search").value
+  const search =
+    $("search")
+      .value
       .toLowerCase()
       .trim();
 
+
   const list =
     products.filter(
+
       p =>
-        (category === "All" ||
-         p.cat === category) &&
+
+        p.active !== false &&
+
+        (
+          category === "All" ||
+          p.cat === category
+        ) &&
+
         p.name
           .toLowerCase()
-          .includes(q)
+          .includes(search)
+
     );
 
+
   $("products").innerHTML =
+
     list.map(
+
       p => `
+
         <article class="card">
 
           <div class="emoji">
@@ -176,30 +363,38 @@ function renderProducts() {
 
           <button
             class="add"
-            onclick="add(${p.id})">
+            onclick="addToCart(${p.id})">
+
             Add to Cart
+
           </button>
 
         </article>
+
       `
+
     ).join("")
+
     ||
+
     "<p>No products found.</p>";
+
 }
 
 
 /* =========================================
-   ADD PRODUCT
+   ADD TO CART
    ========================================= */
 
-function add(id) {
+function addToCart(id) {
 
   cart[id] =
     (cart[id] || 0) + 1;
 
-  save();
+  saveCart();
 
   openCart();
+
 }
 
 
@@ -207,10 +402,11 @@ function add(id) {
    CHANGE QUANTITY
    ========================================= */
 
-function change(id,d) {
+function changeQuantity(id,change) {
 
   cart[id] =
-    (cart[id] || 0) + d;
+    (cart[id] || 0) + change;
+
 
   if(cart[id] <= 0) {
 
@@ -218,7 +414,9 @@ function change(id,d) {
 
   }
 
-  save();
+
+  saveCart();
+
 }
 
 
@@ -231,10 +429,13 @@ function renderCart() {
   const ids =
     Object.keys(cart);
 
+
   $("cartItems").innerHTML =
+
     ids.length
 
       ? ids.map(
+
           id => {
 
             const p =
@@ -242,10 +443,16 @@ function renderCart() {
                 x => x.id == id
               );
 
+
+            if(!p) return "";
+
+
             return `
+
               <div class="item">
 
                 <div>
+
                   <b>
                     ${p.emoji}
                     ${p.name}
@@ -254,38 +461,45 @@ function renderCart() {
                   <br>
 
                   ₹${p.price * cart[id]}
+
                 </div>
+
 
                 <div class="qty">
 
                   <button
-                    onclick="change(${id},-1)">
+                    onclick="changeQuantity(${id},-1)">
                     −
                   </button>
 
                   ${cart[id]}
 
                   <button
-                    onclick="change(${id},1)">
+                    onclick="changeQuantity(${id},1)">
                     +
                   </button>
 
                 </div>
 
               </div>
+
             `;
+
           }
+
         ).join("")
 
       : "<p>Your cart is empty.</p>";
 
+
   $("total").textContent =
     "₹" + cartTotal();
+
 }
 
 
 /* =========================================
-   CART OPEN/CLOSE
+   CART
    ========================================= */
 
 function openCart() {
@@ -295,6 +509,7 @@ function openCart() {
     .remove("hidden");
 
   renderCart();
+
 }
 
 
@@ -303,120 +518,60 @@ function closeCart() {
   $("cartPanel")
     .classList
     .add("hidden");
+
 }
 
 
 /* =========================================
-   QUICK ACTIONS
+   DELIVERY INFORMATION
    ========================================= */
 
-function createQuickActions() {
-
-  const box =
-    document.createElement("section");
-
-  box.id = "quickActions";
-
-  box.style.cssText = `
-    max-width:1100px;
-    margin:15px auto;
-    display:grid;
-    grid-template-columns:repeat(3,1fr);
-    gap:10px;
-    padding:0 5%;
-  `;
-
-  box.innerHTML = `
-
-    <button onclick="openCart()"
-      style="${actionStyle()}">
-      🛒 Order Now
-    </button>
-
-    <button onclick="showDelivery()"
-      style="${actionStyle()}">
-      🚚 Delivery
-    </button>
-
-    <button onclick="showPickup()"
-      style="${actionStyle()}">
-      🏪 Pickup
-    </button>
-
-    <button onclick="showPayment()"
-      style="${actionStyle()}">
-      💳 Payment
-    </button>
-
-    <button onclick="showHelp()"
-      style="${actionStyle()}">
-      ❓ Help
-    </button>
-
-    <button onclick="openWhatsApp()"
-      style="${actionStyle()}">
-      💬 WhatsApp
-    </button>
-
-  `;
-
-  document
-    .querySelector("main")
-    .insertBefore(
-      box,
-      document.querySelector(".search")
-    );
-}
-
-
-function actionStyle() {
-
-  return `
-    border:0;
-    padding:12px 6px;
-    border-radius:12px;
-    background:#ecfdf5;
-    color:#166534;
-    font-weight:700;
-    cursor:pointer;
-  `;
-}
-
-
-/* =========================================
-   STORE INFORMATION
-   ========================================= */
-
-function showDelivery() {
+function showDeliveryInfo() {
 
   alert(
-`🚚 HOME DELIVERY
 
-Delivery Area PIN:
-${STORE.deliveryPin}
+`🚚 SHIVAM KIRANA STORE
+
+Delivery Time:
+10:00 AM – 7:00 PM
+
+Delivery:
+Within 30 minutes
 
 Delivery Charge:
 FREE
 
-Minimum Order:
-NO MINIMUM
+Delivery PIN:
+301604
 
-Please enter your correct PIN code during checkout.`
+Holiday:
+1st and 15th of every month`
+
   );
+
 }
 
 
-function showPickup() {
+/* =========================================
+   PICKUP INFORMATION
+   ========================================= */
+
+function showPickupInfo() {
 
   alert(
+
 `🏪 STORE PICKUP
 
-Store pickup is available.
+Store timing:
+9:00 AM – 8:00 PM
 
-Choose "Store Pickup" during checkout.
+Pickup is available.
 
-You can pay at the store or use UPI.`
+Holiday:
+1st and 15th of every month.`
+
   );
+
 }
 
 
@@ -424,13 +579,14 @@ You can pay at the store or use UPI.`
    PAYMENT INFORMATION
    ========================================= */
 
-function showPayment() {
+function showPaymentInfo() {
 
   alert(
-`💳 PAYMENT OPTIONS
+
+`💳 PAYMENT
 
 UPI:
-${STORE.upi}
+Sethishivam04@ybl
 
 Cash on Delivery:
 Available
@@ -438,9 +594,11 @@ Available
 Pay at Store:
 Available for pickup
 
-Delivery Charge:
+Delivery:
 FREE`
+
   );
+
 }
 
 
@@ -451,22 +609,34 @@ FREE`
 function showHelp() {
 
   alert(
+
 `❓ HELP
 
-1. Search for your product.
-2. Tap "Add to Cart".
+1. Search your product.
+2. Add it to Cart.
 3. Open Cart.
-4. Tap "Place Order on WhatsApp".
+4. Tap Place Order.
 5. Enter your name and phone.
-6. Select Delivery or Store Pickup.
-7. For delivery, enter PIN ${STORE.deliveryPin}.
-8. You can share your current location.
-9. Select your payment method.
-10. Send the order on WhatsApp.
+6. Select Delivery or Pickup.
+7. For delivery use PIN 301604.
+8. You can share your location.
+9. Select payment method.
+10. Send the order.
 
-For help:
-WhatsApp ${STORE.whatsapp}`
+Delivery:
+10 AM – 7 PM
+
+Store:
+9 AM – 8 PM
+
+Delivery:
+Within 30 minutes
+
+WhatsApp:
+7231927995`
+
   );
+
 }
 
 
@@ -476,277 +646,164 @@ WhatsApp ${STORE.whatsapp}`
 
 function openWhatsApp() {
 
-  const url =
-    "https://wa.me/" +
-    STORE.whatsapp;
-
   window.open(
-    url,
+
+    "https://wa.me/" +
+    STORE.whatsapp,
+
     "_blank"
+
   );
+
 }
 
 
 /* =========================================
-   CHECKOUT SETUP
+   CHECK STORE HOLIDAY
    ========================================= */
 
-function setupCheckout() {
+function isHoliday() {
 
-  const modal =
-    document.querySelector(
-      "#checkout .modalBox"
+  const day =
+    new Date().getDate();
+
+  return day === 1 ||
+         day === 15;
+
+}
+
+
+/* =========================================
+   CHECK DELIVERY HOURS
+   ========================================= */
+
+function deliveryOpen() {
+
+  if(isHoliday()) {
+
+    return false;
+
+  }
+
+
+  const hour =
+    new Date().getHours();
+
+
+  return (
+    hour >= STORE.deliveryStart &&
+    hour < STORE.deliveryEnd
+  );
+
+}
+
+
+/* =========================================
+   CHECK STORE HOURS
+   ========================================= */
+
+function storeOpen() {
+
+  if(isHoliday()) {
+
+    return false;
+
+  }
+
+
+  const hour =
+    new Date().getHours();
+
+
+  return (
+    hour >= STORE.storeStart &&
+    hour < STORE.storeEnd
+  );
+
+}
+
+
+/* =========================================
+   CHECKOUT
+   ========================================= */
+
+function openCheckout() {
+
+  if(
+    Object.keys(cart).length === 0
+  ) {
+
+    alert(
+      "Please add products first."
     );
 
-  const sendButton =
-    $("sendOrder");
+    return;
 
-  const extra =
-    document.createElement("div");
+  }
 
-  extra.id =
-    "extraCheckout";
 
-  extra.innerHTML = `
+  if(
+    isHoliday()
+  ) {
 
-    <div style="
-      margin:10px 0;
-      font-weight:700;
-    ">
-      Order Type
-    </div>
+    alert(
+      "Today is a store holiday. The store is closed on the 1st and 15th of every month."
+    );
 
-    <label style="
-      display:block;
-      padding:10px;
-      border:1px solid #ddd;
-      border-radius:10px;
-      margin-bottom:8px;
-    ">
+    return;
 
-      <input
-        type="radio"
-        name="orderType"
-        value="delivery"
-        checked
-        onchange="updateCheckoutType()">
+  }
 
-      🚚 Home Delivery
 
-    </label>
+  $("checkout")
+    .classList
+    .remove("hidden");
 
-    <label style="
-      display:block;
-      padding:10px;
-      border:1px solid #ddd;
-      border-radius:10px;
-      margin-bottom:10px;
-    ">
 
-      <input
-        type="radio"
-        name="orderType"
-        value="pickup"
-        onchange="updateCheckoutType()">
+  updateOrderType();
 
-      🏪 Store Pickup
+  updatePayment();
 
-    </label>
-
-    <div id="deliveryExtra">
-
-      <input
-        id="pin"
-        placeholder="Delivery PIN code"
-        inputmode="numeric"
-        maxlength="6"
-      >
-
-      <button
-        type="button"
-        onclick="checkPin()"
-        style="
-          width:100%;
-          padding:11px;
-          margin:5px 0;
-          border:0;
-          border-radius:10px;
-          background:#0f766e;
-          color:white;
-          font-weight:700;
-        ">
-        📍 Check Delivery Area
-      </button>
-
-      <p
-        id="pinStatus"
-        style="
-          font-size:13px;
-          margin:5px 0;
-        ">
-      </p>
-
-      <button
-        type="button"
-        onclick="getCustomerLocation()"
-        style="
-          width:100%;
-          padding:12px;
-          margin:7px 0;
-          border:0;
-          border-radius:10px;
-          background:#2563eb;
-          color:white;
-          font-weight:700;
-        ">
-        📍 Use My Location
-      </button>
-
-      <p
-        id="locationStatus"
-        style="
-          font-size:13px;
-          color:#475569;
-          margin:5px 0;
-        ">
-        Location not added
-      </p>
-
-    </div>
-
-    <div style="
-      margin:12px 0 6px;
-      font-weight:700;
-    ">
-      Payment Method
-    </div>
-
-    <select
-      id="paymentMethod"
-      onchange="updatePaymentMethod()"
-      style="
-        width:100%;
-        padding:12px;
-        border:1px solid #ddd;
-        border-radius:10px;
-        font:inherit;
-      ">
-
-      <option value="upi">
-        💳 UPI
-      </option>
-
-      <option value="cod">
-        💵 Cash on Delivery
-      </option>
-
-      <option value="store">
-        🏪 Pay at Store
-      </option>
-
-    </select>
-
-    <div
-      id="upiBox"
-      style="
-        display:none;
-        margin-top:8px;
-        padding:12px;
-        background:#f0fdf4;
-        border-radius:10px;
-      ">
-
-      <b>UPI ID:</b>
-      ${STORE.upi}
-
-      <button
-        type="button"
-        onclick="payByUPI()"
-        style="
-          width:100%;
-          padding:11px;
-          margin-top:8px;
-          border:0;
-          border-radius:10px;
-          background:#16a34a;
-          color:white;
-          font-weight:700;
-        ">
-        💳 Pay by UPI
-      </button>
-
-    </div>
-
-  `;
-
-  modal.insertBefore(
-    extra,
-    sendButton
-  );
 }
 
 
 /* =========================================
-   CHECKOUT ORDER TYPE
+   ORDER TYPE
    ========================================= */
 
-function updateCheckoutType() {
+function updateOrderType() {
 
   const selected =
     document.querySelector(
       'input[name="orderType"]:checked'
     );
 
+
   orderType =
     selected
       ? selected.value
       : "delivery";
 
-  const deliveryExtra =
-    $("deliveryExtra");
 
-  if(orderType === "pickup") {
-
-    deliveryExtra.style.display =
-      "none";
-
-    $("address").style.display =
-      "none";
-
-    $("pin").value = "";
-
-    customerLocation = null;
-
-  } else {
-
-    deliveryExtra.style.display =
-      "block";
-
-    $("address").style.display =
-      "block";
-  }
-}
+  const fields =
+    $("deliveryFields");
 
 
-/* =========================================
-   PAYMENT METHOD
-   ========================================= */
+  if(orderType === "delivery") {
 
-function updatePaymentMethod() {
-
-  paymentMethod =
-    $("paymentMethod").value;
-
-  if(paymentMethod === "upi") {
-
-    $("upiBox").style.display =
+    fields.style.display =
       "block";
 
   } else {
 
-    $("upiBox").style.display =
+    fields.style.display =
       "none";
+
+    customerLocation =
+      null;
+
   }
+
 }
 
 
@@ -754,46 +811,39 @@ function updatePaymentMethod() {
    PIN CHECK
    ========================================= */
 
-function checkPin() {
+function checkDeliveryPin() {
 
   const pin =
-    $("pin").value.trim();
+    $("pin")
+      .value
+      .trim();
 
-  const status =
-    $("pinStatus");
 
-  if(!pin) {
+  if(
+    pin === STORE.deliveryPin
+  ) {
 
-    status.textContent =
-      "❌ Please enter PIN code.";
-
-    status.style.color =
-      "#dc2626";
-
-    return;
-  }
-
-  if(pin === STORE.deliveryPin) {
-
-    status.textContent =
+    $("pinStatus").textContent =
       "✅ Delivery available in your area.";
 
-    status.style.color =
+    $("pinStatus").style.color =
       "#16a34a";
 
   } else {
 
-    status.textContent =
-      "❌ Delivery is currently unavailable for this PIN.";
+    $("pinStatus").textContent =
+      "❌ Delivery is unavailable for this PIN.";
 
-    status.style.color =
+    $("pinStatus").style.color =
       "#dc2626";
+
   }
+
 }
 
 
 /* =========================================
-   CUSTOMER LOCATION
+   LOCATION
    ========================================= */
 
 function getCustomerLocation() {
@@ -801,79 +851,99 @@ function getCustomerLocation() {
   const status =
     $("locationStatus");
 
-  if(!navigator.geolocation) {
+
+  if(
+    !navigator.geolocation
+  ) {
 
     status.textContent =
-      "❌ Location is not supported on this device.";
+      "❌ Location is not supported.";
 
     return;
+
   }
 
+
   status.textContent =
-    "📍 Getting your location...";
+    "📍 Getting location...";
+
 
   navigator.geolocation.getCurrentPosition(
 
     position => {
 
-      const latitude =
-        position.coords.latitude;
-
-      const longitude =
-        position.coords.longitude;
-
-      const accuracy =
-        position.coords.accuracy;
-
       customerLocation = {
 
-        latitude,
-        longitude,
-        accuracy
+        latitude:
+          position.coords.latitude,
+
+        longitude:
+          position.coords.longitude,
+
+        accuracy:
+          position.coords.accuracy
 
       };
 
-      status.innerHTML =
-        "✅ Location added<br>" +
-        "Accuracy: about " +
-        Math.round(accuracy) +
-        " metres";
-
-    },
-
-    error => {
-
-      let message =
-        "❌ Location could not be added.";
-
-      if(error.code === 1) {
-
-        message =
-          "❌ Location permission denied. Please allow location access.";
-
-      }
 
       status.textContent =
-        message;
+        "✅ Location added.";
 
     },
+
+
+    () => {
+
+      status.textContent =
+        "❌ Location permission denied.";
+
+    },
+
 
     {
 
-      enableHighAccuracy:true,
+      enableHighAccuracy: true,
 
-      timeout:15000,
+      timeout: 15000,
 
-      maximumAge:0
+      maximumAge: 0
 
     }
 
   );
+
 }
 
 
 /* =========================================
-   UPI PAYMENT
+   PAYMENT
+   ========================================= */
+
+function updatePayment() {
+
+  paymentMethod =
+    $("paymentMethod").value;
+
+
+  if(
+    paymentMethod === "upi"
+  ) {
+
+    $("upiBox").style.display =
+      "block";
+
+  } else {
+
+    $("upiBox").style.display =
+      "none";
+
+  }
+
+}
+
+
+/* =========================================
+   UPI
    ========================================= */
 
 function payByUPI() {
@@ -881,48 +951,67 @@ function payByUPI() {
   const total =
     cartTotal();
 
+
   if(total <= 0) {
 
     alert(
-      "Please add products to cart first."
+      "Your cart is empty."
     );
 
     return;
+
   }
 
-  const upiUrl =
+
+  const url =
+
     "upi://pay" +
+
     "?pa=" +
     encodeURIComponent(
       STORE.upi
     ) +
+
     "&pn=" +
     encodeURIComponent(
       STORE.name
     ) +
+
     "&am=" +
     total.toFixed(2) +
+
     "&cu=INR";
 
+
   window.location.href =
-    upiUrl;
+    url;
+
 }
 
 
 /* =========================================
-   SEND ORDER TO WHATSAPP
+   SEND ORDER
    ========================================= */
 
-function sendOrderToWhatsApp() {
+function sendOrder() {
 
   const name =
-    $("name").value.trim();
+    $("name")
+      .value
+      .trim();
+
 
   const phone =
-    $("phone").value.trim();
+    $("phone")
+      .value
+      .trim();
+
 
   const address =
-    $("address").value.trim();
+    $("address")
+      .value
+      .trim();
+
 
   if(!name || !phone) {
 
@@ -931,15 +1020,24 @@ function sendOrderToWhatsApp() {
     );
 
     return;
+
   }
 
 
-  /* DELIVERY VALIDATION */
+  if(
+    orderType === "delivery"
+  ) {
 
-  if(orderType === "delivery") {
+    if(!deliveryOpen()) {
 
-    const pin =
-      $("pin").value.trim();
+      alert(
+        "Delivery is available from 10 AM to 7 PM. Delivery is also closed on the 1st and 15th of every month."
+      );
+
+      return;
+
+    }
+
 
     if(!address) {
 
@@ -948,151 +1046,148 @@ function sendOrderToWhatsApp() {
       );
 
       return;
+
     }
 
-    if(pin !== STORE.deliveryPin) {
+
+    if(
+      $("pin").value.trim() !==
+      STORE.deliveryPin
+    ) {
 
       alert(
-        "Delivery is currently available only for PIN " +
-        STORE.deliveryPin
+        "Delivery is available only for PIN 301604."
       );
 
       return;
+
     }
+
   }
 
-
-  /* ORDER ITEMS */
 
   const ids =
     Object.keys(cart);
 
-  if(!ids.length) {
 
-    alert(
-      "Your cart is empty."
-    );
+  const items =
+    ids.map(
 
-    return;
-  }
+      id => {
 
+        const p =
+          products.find(
+            x => x.id == id
+          );
 
-  const lines =
-    ids.map(id => {
-
-      const p =
-        products.find(
-          x => x.id == id
+        return (
+          p.name +
+          " x " +
+          cart[id] +
+          " = ₹" +
+          (p.price * cart[id])
         );
 
-      return (
-        p.name +
-        " x " +
-        cart[id] +
-        " = ₹" +
-        (p.price * cart[id])
-      );
+      }
 
-    });
+    );
 
-
-  /* TOTAL */
 
   const subtotal =
     cartTotal();
 
-  const delivery =
-    orderType === "delivery"
-      ? STORE.deliveryFee
-      : 0;
 
-  const total =
-    subtotal + delivery;
-
-
-  /* LOCATION */
-
-  let locationText =
-    "Location not shared";
-
-  if(customerLocation) {
-
-    const lat =
-      customerLocation.latitude;
-
-    const lng =
-      customerLocation.longitude;
-
-    const mapsUrl =
-      "https://www.google.com/maps?q=" +
-      lat +
-      "," +
-      lng;
-
-    locationText =
-      "📍 Customer Location:\n" +
-      mapsUrl;
-  }
-
-
-  /* ORDER TYPE */
-
-  const typeText =
+  const orderTypeText =
     orderType === "delivery"
       ? "🚚 Home Delivery"
       : "🏪 Store Pickup";
 
 
-  /* PAYMENT */
-
   let paymentText =
-    "Cash on Delivery";
+    "💵 Cash on Delivery";
 
-  if(paymentMethod === "upi") {
+
+  if(
+    paymentMethod === "upi"
+  ) {
 
     paymentText =
       "💳 UPI - " +
       STORE.upi;
 
-  } else if(paymentMethod === "store") {
-
-    paymentText =
-      "🏪 Pay at Store";
   }
 
 
-  /* ADDRESS */
+  if(
+    paymentMethod === "store"
+  ) {
+
+    paymentText =
+      "🏪 Pay at Store";
+
+  }
+
+
+  let locationText =
+    "Location not shared";
+
+
+  if(customerLocation) {
+
+    const map =
+
+      "https://www.google.com/maps?q=" +
+
+      customerLocation.latitude +
+      "," +
+      customerLocation.longitude;
+
+
+    locationText =
+      "📍 Customer Location:\n" +
+      map;
+
+  }
+
 
   const addressText =
     orderType === "delivery"
-      ? "Address: " + address
-      : "Address: Store Pickup";
+      ? address
+      : "Store Pickup";
 
-
-  /* WHATSAPP MESSAGE */
 
   const message =
-`Hello ${STORE.name},
 
-🛒 NEW ORDER
+`Hello Shivam Kirana Store,
 
-Customer: ${name}
-Phone: ${phone}
+🛒 NEW WEBSITE ORDER
 
-Order Type:
-${typeText}
+Customer:
+${name}
 
+Phone:
+${phone}
+
+Order:
+${orderTypeText}
+
+Address:
 ${addressText}
 
 Payment:
 ${paymentText}
 
 Products:
-${lines.join("\n")}
+${items.join("\n")}
 
-Subtotal: ₹${subtotal}
-Delivery: ₹${delivery}
-TOTAL: ₹${total}
+Subtotal:
+₹${subtotal}
+
+Delivery:
+FREE
+
+Expected delivery:
+Within 30 minutes
 
 ${locationText}
 
@@ -1100,18 +1195,377 @@ Please confirm my order.
 
 Thank you.`;
 
+
   const url =
+
     "https://wa.me/" +
+
     STORE.whatsapp +
+
     "?text=" +
+
     encodeURIComponent(
       message
     );
+
 
   window.open(
     url,
     "_blank"
   );
+
+}
+
+
+/* =========================================
+   SHOPKEEPER
+   ========================================= */
+
+function openShopkeeper() {
+
+  const password =
+    prompt(
+      "Enter shopkeeper password:"
+    );
+
+
+  /*
+    Change this password.
+    Current password: 1234
+  */
+
+  if(password !== "1234") {
+
+    alert(
+      "Incorrect password."
+    );
+
+    return;
+
+  }
+
+
+  $("shopkeeper")
+    .classList
+    .remove("hidden");
+
+
+  renderAdminProducts();
+
+}
+
+
+function closeShopkeeper() {
+
+  $("shopkeeper")
+    .classList
+    .add("hidden");
+
+}
+
+
+/* =========================================
+   ADD PRODUCT
+   ========================================= */
+
+function addShopProduct() {
+
+  const name =
+    $("adminProductName")
+      .value
+      .trim();
+
+
+  const price =
+    Number(
+      $("adminProductPrice")
+        .value
+    );
+
+
+  const cat =
+    $("adminProductCategory")
+      .value
+      .trim();
+
+
+  const emoji =
+    $("adminProductEmoji")
+      .value
+      .trim() || "🛒";
+
+
+  if(
+    !name ||
+    !price ||
+    !cat
+  ) {
+
+    alert(
+      "Please fill product name, price and category."
+    );
+
+    return;
+
+  }
+
+
+  products.push({
+
+    id:
+      Date.now(),
+
+    name:
+      name,
+
+    price:
+      price,
+
+    cat:
+      cat,
+
+    emoji:
+      emoji,
+
+    active:
+      true
+
+  });
+
+
+  saveProducts();
+
+
+  $("adminProductName").value = "";
+
+  $("adminProductPrice").value = "";
+
+  $("adminProductCategory").value = "";
+
+  $("adminProductEmoji").value = "";
+
+
+  renderAdminProducts();
+
+  renderCategories();
+
+  renderProducts();
+
+
+  alert(
+    "Product added successfully."
+  );
+
+}
+
+
+/* =========================================
+   ADMIN PRODUCTS
+   ========================================= */
+
+function renderAdminProducts() {
+
+  $("adminProducts").innerHTML =
+
+    products.map(
+
+      p => `
+
+        <div class="adminProduct">
+
+          <div>
+
+            ${p.emoji}
+            <b>${p.name}</b>
+
+            <br>
+
+            ₹${p.price}
+
+            <br>
+
+            ${p.cat}
+
+            <br>
+
+            ${
+              p.active !== false
+                ? "✅ Available"
+                : "❌ Hidden"
+            }
+
+          </div>
+
+
+          <div>
+
+            <button
+              onclick="editProduct(${p.id})">
+
+              ✏️
+
+            </button>
+
+
+            <button
+              onclick="toggleProduct(${p.id})">
+
+              ${
+                p.active !== false
+                  ? "🙈"
+                  : "👁️"
+              }
+
+            </button>
+
+
+            <button
+              onclick="deleteProduct(${p.id})">
+
+              🗑️
+
+            </button>
+
+          </div>
+
+        </div>
+
+      `
+
+    ).join("");
+
+}
+
+
+/* =========================================
+   EDIT PRODUCT
+   ========================================= */
+
+function editProduct(id) {
+
+  const p =
+    products.find(
+      x => x.id === id
+    );
+
+
+  if(!p) return;
+
+
+  const name =
+    prompt(
+      "Product name:",
+      p.name
+    );
+
+
+  if(name === null) return;
+
+
+  const price =
+    prompt(
+      "Price:",
+      p.price
+    );
+
+
+  if(price === null) return;
+
+
+  const category =
+    prompt(
+      "Category:",
+      p.cat
+    );
+
+
+  if(category === null) return;
+
+
+  p.name =
+    name.trim();
+
+
+  p.price =
+    Number(price);
+
+
+  p.cat =
+    category.trim();
+
+
+  saveProducts();
+
+  renderAdminProducts();
+
+  renderCategories();
+
+  renderProducts();
+
+}
+
+
+/* =========================================
+   HIDE / SHOW PRODUCT
+   ========================================= */
+
+function toggleProduct(id) {
+
+  const p =
+    products.find(
+      x => x.id === id
+    );
+
+
+  if(!p) return;
+
+
+  p.active =
+    p.active === false;
+
+
+  saveProducts();
+
+  renderAdminProducts();
+
+  renderCategories();
+
+  renderProducts();
+
+}
+
+
+/* =========================================
+   DELETE PRODUCT
+   ========================================= */
+
+function deleteProduct(id) {
+
+  if(
+    !confirm(
+      "Delete this product?"
+    )
+  ) {
+
+    return;
+
+  }
+
+
+  products =
+    products.filter(
+      p => p.id !== id
+    );
+
+
+  saveProducts();
+
+  renderAdminProducts();
+
+  renderCategories();
+
+  renderProducts();
+
 }
 
 
@@ -1122,57 +1576,40 @@ Thank you.`;
 $("search").oninput =
   renderProducts;
 
+
 $("cartBtn").onclick =
   openCart;
+
 
 $("closeCart").onclick =
   closeCart;
 
+
 $("orderBtn").onclick =
-  () => {
-
-    if(
-      !Object.keys(cart).length
-    ) {
-
-      alert(
-        "Please add products first."
-      );
-
-      return;
-    }
-
-    $("checkout")
-      .classList
-      .remove("hidden");
-
-    updateCheckoutType();
-  };
+  openCheckout;
 
 
 $("closeCheckout").onclick =
+
   () => {
 
     $("checkout")
       .classList
       .add("hidden");
+
   };
 
 
 $("sendOrder").onclick =
-  sendOrderToWhatsApp;
+  sendOrder;
 
 
 /* =========================================
-   START APP
+   START
    ========================================= */
-
-createQuickActions();
-
-setupCheckout();
 
 renderCategories();
 
 renderProducts();
 
-save();
+saveCart();
