@@ -1673,6 +1673,91 @@ async function shopkeeperLogin() {
 
 
 /* =========================
+   SHOPKEEPER ORDERS
+========================= */
+
+async function loadShopkeeperOrders() {
+  const box = $("shopkeeperOrders");
+  if (!box) return;
+
+  if (!shopkeeperUser || !supabaseClient) {
+    box.innerHTML = "<p>Please login as shopkeeper.</p>";
+    return;
+  }
+
+  box.innerHTML = "<p>Loading orders...</p>";
+
+  const { data, error } = await supabaseClient
+    .from("orders")
+    .select("*")
+    .order("created_at", { ascending: false })
+    .limit(100);
+
+  if (error) {
+    console.error(error);
+    box.innerHTML = "<p>Could not load orders. Check Supabase RLS policies for the orders table.</p>";
+    return;
+  }
+
+  if (!data || !data.length) {
+    box.innerHTML = "<p>No customer orders yet.</p>";
+    return;
+  }
+
+  box.innerHTML = data.map(order => {
+    const status = order.status || "new";
+    const date = order.created_at
+      ? new Date(order.created_at).toLocaleString()
+      : "Date unavailable";
+
+    return `
+      <div style="border:1px solid #e5e7eb;border-radius:14px;padding:14px;margin:10px 0;background:#fff">
+        <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap">
+          <strong>Order #${escapeHtml(String(order.id).slice(0,8))}</strong>
+          <strong>${money(order.total_amount)}</strong>
+        </div>
+        <p style="margin:7px 0"><b>Customer:</b> ${escapeHtml(order.customer_name || "—")}</p>
+        <p style="margin:7px 0"><b>Phone:</b> ${escapeHtml(order.customer_phone || "—")}</p>
+        <p style="margin:7px 0"><b>Type:</b> ${order.order_type === "pickup" ? "🏪 Store Pickup" : "🚚 Home Delivery"}</p>
+        ${order.address ? `<p style="margin:7px 0"><b>Address:</b> ${escapeHtml(order.address)}</p>` : ""}
+        ${order.pin_code ? `<p style="margin:7px 0"><b>PIN:</b> ${escapeHtml(order.pin_code)}</p>` : ""}
+        <p style="margin:7px 0"><b>Payment:</b> ${escapeHtml(order.payment_method || "—")}</p>
+        <p style="margin:7px 0"><b>Placed:</b> ${escapeHtml(date)}</p>
+        ${order.latitude && order.longitude
+          ? `<a href="https://www.google.com/maps?q=${encodeURIComponent(order.latitude + "," + order.longitude)}" target="_blank" rel="noopener">📍 Open customer location</a>`
+          : ""}
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px">
+          <label><b>Status</b></label>
+          <select onchange="updateOrderStatus('${String(order.id)}', this.value)" style="padding:9px;border:1px solid #d1d5db;border-radius:9px">
+            <option value="new" ${status==="new"?"selected":""}>New</option>
+            <option value="preparing" ${status==="preparing"?"selected":""}>Preparing</option>
+            <option value="out_for_delivery" ${status==="out_for_delivery"?"selected":""}>Out for Delivery</option>
+            <option value="delivered" ${status==="delivered"?"selected":""}>Delivered</option>
+            <option value="cancelled" ${status==="cancelled"?"selected":""}>Cancelled</option>
+          </select>
+        </div>
+      </div>`;
+  }).join("");
+}
+
+async function updateOrderStatus(orderId, status) {
+  if (!shopkeeperUser || !supabaseClient) return;
+
+  const { error } = await supabaseClient
+    .from("orders")
+    .update({ status })
+    .eq("id", orderId);
+
+  if (error) {
+    console.error(error);
+    alert("Could not update order status. Check Supabase RLS policies.");
+    return;
+  }
+
+  await loadShopkeeperOrders();
+}
+
+/* =========================
    SHOPKEEPER PANEL
 ========================= */
 
@@ -1686,6 +1771,7 @@ function openShopkeeperPanel() {
     panel.classList.remove("hidden");
 
     renderShopkeeperProducts();
+    loadShopkeeperOrders();
 
     return;
   }
@@ -1866,6 +1952,18 @@ function openShopkeeperPanel() {
 
       <div id="shopkeeperProducts"></div>
 
+      <hr>
+
+      <h3>📦 Customer Orders</h3>
+
+      <button
+        onclick="loadShopkeeperOrders()"
+        style="width:100%;padding:12px;border:0;border-radius:10px;background:#2563eb;color:white;font-weight:800;margin-bottom:10px;">
+        🔄 Refresh Orders
+      </button>
+
+      <div id="shopkeeperOrders"></div>
+
       <button
         onclick="shopkeeperLogout()"
         style="
@@ -1889,6 +1987,7 @@ function openShopkeeperPanel() {
   document.body.appendChild(panel);
 
   renderShopkeeperProducts();
+  loadShopkeeperOrders();
 }
 
 function closeShopkeeperPanel() {
