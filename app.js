@@ -186,6 +186,7 @@ async function loadSupabase() {
     supabaseClient.auth.onAuthStateChange(async (_event, session) => {
       if (!session?.user) {
         shopkeeperUser = null;
+        updateShopkeeperInterface();
         return;
       }
 
@@ -198,6 +199,7 @@ async function loadSupabase() {
 
         shopkeeperUser =
           profile?.role === "shopkeeper" ? session.user : null;
+        updateShopkeeperInterface();
       } catch (error) {
         console.error("Auth/profile check failed:", error);
       }
@@ -364,7 +366,7 @@ function setupQuickActions() {
       ❓ Help
     </button>
 
-    <button onclick="openShopkeeperLogin()">
+    <button id="shopkeeperAccessButton" onclick="openShopkeeperLogin()" style="display:none">
       👨‍💼 Shopkeeper
     </button>
 
@@ -2930,6 +2932,28 @@ async function shopkeeperLogout() {
    AUTH SESSION
 ========================= */
 
+function updateShopkeeperInterface() {
+  const button = $("shopkeeperAccessButton");
+  if (!button) return;
+
+  const params = new URLSearchParams(window.location.search);
+  const shopkeeperMode =
+    params.get("shopkeeper") === "1" ||
+    window.location.hash === "#shopkeeper";
+
+  // Public customers do not see the shopkeeper entry point.
+  // The shopkeeper can open the private entry page with ?shopkeeper=1.
+  button.style.display = shopkeeperMode ? "" : "none";
+
+  if (shopkeeperUser) {
+    button.textContent = "👨‍💼 Shopkeeper Dashboard";
+    button.onclick = () => openShopkeeperPanel();
+  } else {
+    button.textContent = "👨‍💼 Shopkeeper Login";
+    button.onclick = () => openShopkeeperLogin();
+  }
+}
+
 async function checkShopkeeperSession() {
 
   if (!supabaseClient) return;
@@ -2943,6 +2967,7 @@ async function checkShopkeeperSession() {
   if (!data.session) {
 
     shopkeeperUser = null;
+    updateShopkeeperInterface();
 
     return;
   }
@@ -2966,7 +2991,11 @@ async function checkShopkeeperSession() {
 
     shopkeeperUser =
       user;
+  } else {
+    shopkeeperUser = null;
   }
+
+  updateShopkeeperInterface();
 }
 
 
@@ -3101,6 +3130,7 @@ async function initApp() {
   setupQuickActions();
 
   setupButtons();
+  updateShopkeeperInterface();
 
   setupSearch();
 
