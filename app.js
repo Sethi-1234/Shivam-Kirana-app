@@ -2031,10 +2031,58 @@ async function loadShopkeeperOrders() {
                <button onclick="stopDeliveryTracking()" style="padding:9px;border:0;border-radius:9px;background:#dc2626;color:white;font-weight:800">⏹ Stop Location</button>`
             : ""}
         </div>
-        ${order.tracking_code ? `<p style="font-size:12px;color:#64748b;margin:7px 0">Tracking code: ${escapeHtml(order.tracking_code)}</p>` : ""}
+        ${order.tracking_code
+          ? `<div style="margin-top:10px;padding:12px;border-radius:12px;background:#eff6ff;border:1px solid #bfdbfe">
+               <div style="font-size:12px;color:#475569;font-weight:700">TRACKING ID</div>
+               <div style="font-size:18px;font-weight:900;letter-spacing:.5px;color:#1d4ed8;margin-top:3px">${escapeHtml(order.tracking_code)}</div>
+               <button onclick="copyShopkeeperTrackingId('${String(order.tracking_code)}')" style="margin-top:7px;padding:7px 10px;border:1px solid #93c5fd;border-radius:8px;background:white;font-weight:800">📋 Copy Tracking ID</button>
+             </div>`
+          : `<button onclick="generateTrackingIdForOrder('${String(order.id)}')" style="width:100%;padding:10px;margin-top:10px;border:0;border-radius:10px;background:#7c3aed;color:white;font-weight:900">🆔 Generate Tracking ID</button>`}
       </div>`;
   }).join("");
 }
+
+async function generateTrackingIdForOrder(orderId) {
+  if (!shopkeeperUser || !supabaseClient) {
+    alert("Please login as shopkeeper first.");
+    return;
+  }
+
+  const bytes = crypto.getRandomValues(new Uint32Array(2));
+  const generatedCode =
+    "SK-" +
+    new Date().toISOString().slice(0, 10).replace(/-/g, "") +
+    "-" +
+    Array.from(bytes).map(n => n.toString(36)).join("").slice(0, 10).toUpperCase();
+
+  const { error } = await supabaseClient
+    .from("orders")
+    .update({ tracking_code: generatedCode })
+    .eq("id", orderId);
+
+  if (error) {
+    console.error("Tracking ID generation failed:", error);
+    alert("Could not generate tracking ID.\n\n" + error.message);
+    return;
+  }
+
+  alert("✅ Tracking ID generated:\n\n" + generatedCode);
+  await loadShopkeeperOrders();
+}
+
+
+function copyShopkeeperTrackingId(code) {
+  const clean = String(code || "").trim();
+  if (!clean) return;
+  if (navigator.clipboard?.writeText) {
+    navigator.clipboard.writeText(clean)
+      .then(() => alert("✅ Tracking ID copied."))
+      .catch(() => alert("Tracking ID: " + clean));
+  } else {
+    alert("Tracking ID: " + clean);
+  }
+}
+
 
 async function updateOrderStatus(orderId, status) {
   if (!shopkeeperUser || !supabaseClient) return;
