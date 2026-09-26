@@ -360,6 +360,13 @@ ON public.profiles (id, role);
 CREATE INDEX IF NOT EXISTS orders_tracking_code_idx
 ON public.orders (tracking_code);
 
+-- Ensure order_items matches the secure order-creation RPC.
+ALTER TABLE public.order_items
+ADD COLUMN IF NOT EXISTS unit_price numeric;
+
+ALTER TABLE public.order_items
+ADD COLUMN IF NOT EXISTS line_total numeric;
+
 NOTIFY pgrst, 'reload schema';
 
 COMMIT;
