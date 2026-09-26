@@ -1,3 +1,7 @@
+/* SHIVAM KIRANA STORE - COMPLETE APP.JS v2
+   Fixed shopkeeper auth/session handling, product stock saving,
+   cart stock limits, and UPI payment button rendering.
+*/
 /* =========================================================
    SHIVAM KIRANA STORE
    COMPLETE APP.JS
@@ -156,6 +160,28 @@ async function loadSupabase() {
       SUPABASE_URL,
       SUPABASE_KEY
     );
+
+  if (supabaseClient?.auth) {
+    supabaseClient.auth.onAuthStateChange(async (_event, session) => {
+      if (!session?.user) {
+        shopkeeperUser = null;
+        return;
+      }
+
+      try {
+        const { data: profile } = await supabaseClient
+          .from("profiles")
+          .select("role")
+          .eq("id", session.user.id)
+          .maybeSingle();
+
+        shopkeeperUser =
+          profile?.role === "shopkeeper" ? session.user : null;
+      } catch (error) {
+        console.error("Auth/profile check failed:", error);
+      }
+    });
+  }
 }
 
 
@@ -805,8 +831,19 @@ function addToCart(id) {
 
 function changeCart(id, change) {
 
-  cart[id] =
-    Number(cart[id] || 0) + change;
+  const product = products.find(
+    p => String(p.id) === String(id)
+  );
+
+  const nextQty =
+    Number(cart[id] || 0) + Number(change);
+
+  if (product && nextQty > Number(product.stock)) {
+    alert("You cannot add more than the available stock.");
+    return;
+  }
+
+  cart[id] = nextQty;
 
   if (cart[id] <= 0) {
     delete cart[id];
@@ -961,49 +998,24 @@ function updateCheckoutType() {
 
 function updatePaymentInfo() {
 
-  const method =
-    $("paymentMethod")?.value;
-
-  const info =
-    $("paymentInfo");
-
-  const upiButton =
-    $("upiButton");
+  const method = $("paymentMethod")?.value;
+  const info = $("paymentInfo");
 
   if (!info) return;
 
   if (method === "upi") {
-
     info.innerHTML = `
       <b>UPI ID</b>
-      <br>
-      ${STORE.upi}
+      <div style="margin:6px 0 10px">${escapeHtml(STORE.upi)}</div>
+      <button type="button" class="upiButton" onclick="payByUPI()"
+        style="padding:10px 14px;border:0;border-radius:10px;background:#16a34a;color:white;font-weight:800;cursor:pointer;">
+        💳 Pay by UPI
+      </button>
     `;
-
-    if (upiButton) {
-      upiButton.style.display =
-        "block";
-    }
-
   } else if (method === "cod") {
-
-    info.innerHTML =
-      "💵 Pay cash when your order is delivered.";
-
-    if (upiButton) {
-      upiButton.style.display =
-        "none";
-    }
-
+    info.innerHTML = "💵 Pay cash when your order is delivered.";
   } else {
-
-    info.innerHTML =
-      "🏪 Pay when you collect your order from the store.";
-
-    if (upiButton) {
-      upiButton.style.display =
-        "none";
-    }
+    info.innerHTML = "🏪 Pay when you collect your order from the store.";
   }
 }
 
@@ -1670,7 +1682,9 @@ async function shopkeeperLogin() {
     if (status) {
 
       status.textContent =
-        "❌ This account is not a shopkeeper account.";
+        profileError
+          ? "❌ Login succeeded, but the shopkeeper profile could not be read. Check the profiles SELECT policy in Supabase."
+          : "❌ This account is not a shopkeeper account.";
     }
 
     return;
@@ -2079,7 +2093,7 @@ async function saveProduct() {
     return;
   }
 
-  if (!price || price < 0) {
+  if (!Number.isFinite(price) || price < 0) {
 
     alert(
       "Enter a valid price."
@@ -2140,6 +2154,8 @@ async function saveProduct() {
           price,
 
           category,
+
+          stock,
 
           emoji,
 
