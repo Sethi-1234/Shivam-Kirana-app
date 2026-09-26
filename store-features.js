@@ -88,7 +88,7 @@
   window.trackSavedOrder = function (code) {
     closeStoreFeatureModal();
     if (typeof window.openOrderTracking === "function") {
-      window.openOrderTracking(code);
+      localStorage.setItem("shivam_last_tracking_code", code);\n      window.openOrderTrackingPrompt();
     } else if (typeof window.openOrderTrackingPrompt === "function") {
       window.openOrderTrackingPrompt();
     }
@@ -248,14 +248,13 @@
       if (!match) return;
 
       const id = match[1];
-      const product = (window.products || []).find(p => String(p.id) === String(id));
-      if (!product) return;
+      const productName = card.querySelector("h3")?.textContent?.trim() || "Product";
 
       const b = document.createElement("button");
       b.type = "button";
       b.className = "reviewButton";
       b.textContent = "⭐ Reviews";
-      b.onclick = () => openProductReviews(product.id, product.name);
+      b.onclick = () => openProductReviews(id, productName);
       buttons.insertAdjacentElement("afterend", b);
     });
   }
