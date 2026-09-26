@@ -724,6 +724,13 @@ function renderProducts() {
 
   if (!el) return;
 
+  // Never leave the storefront empty on the customer page.
+  if (!Array.isArray(products) || !products.length) {
+    loadFallbackProducts();
+  }
+
+  products = products.map(normalizeProduct);
+
   const search =
     ($("search")?.value || "")
       .toLowerCase()
