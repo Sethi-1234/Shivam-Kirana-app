@@ -445,14 +445,20 @@ function showPaymentInfo() {
   alert(
 `💳 PAYMENT OPTIONS
 
-UPI:
+📱 UPI:
 ${STORE.upi}
 
-Cash on Delivery:
-Available
+📷 QR Code / UPI QR:
+Available at checkout
 
-Pay at Store:
-Available for pickup`
+💳 Debit / Credit Card:
+Available through a secure payment gateway when connected
+
+🏦 Net Banking:
+Available through a secure payment gateway when connected
+
+💵 Cash on Delivery:
+Available`
   );
 }
 
@@ -1581,99 +1587,146 @@ Please confirm this order.
 
 Thank you.`;
 
-  /* SAVE ORDER TO SUPABASE */
+  /* SAVE ORDER THROUGH SECURE SUPABASE RPC */
 
-  let savedOrder = null;
-
-  try {
-
-    if (supabaseClient) {
-
-      const {
-        data,
-        error
-      } = await supabaseClient
-        .from("orders")
-        .insert({
-
-          customer_name: name,
-
-          customer_phone: phone,
-
-          order_type: orderType,
-
-          address:
-            orderType === "delivery"
-              ? address
-              : null,
-
-          pin_code:
-            orderType === "delivery"
-              ? pin
-              : null,
-
-          latitude,
-
-          longitude,
-
-          payment_method: payment,
-
-          total_amount: total,
-
-          status: "new",
-
-          tracking_code: trackingCode
-
-        })
-        .select()
-        .single();
-
-      if (error) {
-
-        console.error(
-          "Order database error:",
-          error
-        );
-
-        alert(
-          "❌ Order could not be saved to the database.\n\n" +
-          error.message +
-          "\n\nPlease send me a screenshot of this error."
-        );
-
-        return;
-
-      } else {
-
-        savedOrder = data;
-
-        const orderItems = Object.keys(cart).map(id => {
-          const product = products.find(x => String(x.id) === String(id));
-          if (!product) return null;
-          const quantity = Number(cart[id] || 0);
-          const unitPrice = Number(product.price || 0);
-          return { order_id: data.id, product_id: product.id ?? null, product_name: product.name, quantity, unit_price: unitPrice, line_total: unitPrice * quantity };
-        }).filter(Boolean);
-
-        if (orderItems.length) {
-          const itemsResult = await supabaseClient.from("order_items").insert(orderItems);
-          if (itemsResult.error) console.warn("Order saved, but product line items could not be saved:", itemsResult.error);
-        }
-      }
-    }
-
-  } catch (error) {
-
-    console.error(error);
+  if (!supabaseClient) {
+    alert(
+      "❌ Secure order service is not available right now. Please try again in a moment."
+    );
+    return;
   }
 
+  const rpcItems = Object.keys(cart).map(id => {
+    const product = products.find(
+      p => String(p.id) === String(id)
+    );
+
+    if (!product || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(product.id))) {
+      return null;
+    }
+
+    const quantity = Number(cart[id] || 0);
+
+    if (!Number.isInteger(quantity) || quantity <= 0 || quantity > 10000) {
+      return null;
+    }
+
+    return {
+      product_id: String(product.id),
+      quantity
+    };
+  }).filter(Boolean);
+
+  if (rpcItems.length !== Object.keys(cart).length) {
+    alert(
+      "❌ One or more cart products are no longer available. Please refresh the page and add them again."
+    );
+    return;
+  }
+
+  const { data: orderResult, error: orderError } =
+    await supabaseClient.rpc("create_customer_order", {
+      p_customer_name: name,
+      p_customer_phone: phone,
+      p_order_type: orderType,
+      p_address: orderType === "delivery" ? address : null,
+      p_pin_code: orderType === "delivery" ? pin : null,
+      p_latitude: latitude,
+      p_longitude: longitude,
+      p_payment_method: payment,
+      p_items: rpcItems
+    });
+
+  if (orderError) {
+    console.error("Secure order RPC error:", orderError);
+    alert(
+      "❌ Order could not be saved securely.\\n\\n" +
+      orderError.message
+    );
+    return;
+  }
+
+  const savedOrder = Array.isArray(orderResult)
+    ? orderResult[0]
+    : orderResult;
+
+  if (!savedOrder?.tracking_code) {
+    alert(
+      "❌ The secure order service did not return a tracking code. Please try again."
+    );
+    return;
+  }
+
+  const serverTotal = Number(savedOrder.total_amount || 0);
+
+  if (!Number.isFinite(serverTotal)) {
+    alert("❌ Invalid order total returned by the server.");
+    return;
+  }
+
+  // Use the server-calculated total in the WhatsApp message.
+  const finalTotal = serverTotal;
+
+  const finalTrackingCode = savedOrder.tracking_code;
+
+  const secureLines = rpcItems.map(item => {
+    const product = products.find(
+      p => String(p.id) === String(item.product_id)
+    );
+    return product
+      ? product.name + " x " + item.quantity
+      : "Product x " + item.quantity;
+  });
+
+  const secureLocationText = customerLocation
+    ? "📍 Customer Location:\\nhttps://www.google.com/maps?q=" +
+      customerLocation.latitude + "," + customerLocation.longitude
+    : "Location not shared";
+
+  const message =
+`🛒 NEW ORDER
+${STORE.name}
+
+Customer: ${name}
+Phone: ${phone}
+
+Order Type: ${
+  orderType === "delivery"
+    ? "Home Delivery"
+    : "Store Pickup"
+}
+
+${orderType === "delivery"
+  ? "Address: " + address
+  : ""}
+
+${orderType === "delivery"
+  ? "PIN: " + pin
+  : ""}
+
+Payment: ${paymentName}
+
+Products:
+${secureLines.join("\\n")}
+
+Delivery Charge: FREE
+
+Total: ${money(finalTotal)}
+
+Tracking Code: ${finalTrackingCode}
+
+Track your order on the website using this code.
+
+${secureLocationText}
+
+Please confirm this order.
+
+Thank you.`;
 
   /* SHOW CUSTOMER TRACKING */
 
-  if (savedOrder?.tracking_code) {
-    setTimeout(() => openOrderTracking(savedOrder.tracking_code), 50);
-  } else {
-    alert("⚠️ The order was sent to WhatsApp, but online tracking could not be created. Please ask the shopkeeper for confirmation.");
+  if (finalTrackingCode) {
+    setTimeout(() => openOrderTracking(finalTrackingCode), 50);
   }
 
 
@@ -2189,6 +2242,12 @@ function stopDeliveryTracking() {
 ========================= */
 
 function openShopkeeperPanel() {
+
+  if (!shopkeeperUser || !supabaseClient) {
+    alert("🔐 Shopkeeper access requires a valid signed-in shopkeeper session.");
+    openShopkeeperLogin();
+    return;
+  }
 
   let panel =
     $("shopkeeperPanel");
