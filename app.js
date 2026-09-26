@@ -2216,8 +2216,28 @@ function openShopkeeperPanel() {
       </div>
 
       <p>
-        Manage products in your online store.
+        Manage products, stock and customer orders from one place.
       </p>
+
+      <div id="shopkeeperStats"
+        style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:12px 0;">
+        <div style="padding:12px;border-radius:12px;background:#ecfdf5;text-align:center;">
+          <b id="statProducts">0</b><br><small>Products</small>
+        </div>
+        <div style="padding:12px;border-radius:12px;background:#eff6ff;text-align:center;">
+          <b id="statStock">0</b><br><small>Stock items</small>
+        </div>
+        <div style="padding:12px;border-radius:12px;background:#fff7ed;text-align:center;">
+          <b id="statOrders">0</b><br><small>Orders</small>
+        </div>
+      </div>
+
+      <button
+        type="button"
+        onclick="loadProductsFromDatabase();loadShopkeeperOrders();"
+        style="width:100%;padding:12px;border:0;border-radius:10px;background:#0f766e;color:white;font-weight:800;margin-bottom:10px;">
+        🔄 Refresh Dashboard
+      </button>
 
       <input
         id="productName"
@@ -2643,6 +2663,15 @@ function cancelProductEdit() {
    SHOPKEEPER PRODUCT LIST
 ========================= */
 
+function renderShopkeeperStats(orderCount = null) {
+  const productCount = products.filter(p => !String(p.id).startsWith("demo")).length;
+  const stockCount = products.filter(p => Number(p.stock || 0) > 0 && !String(p.id).startsWith("demo")).length;
+
+  if ($("statProducts")) $("statProducts").textContent = productCount;
+  if ($("statStock")) $("statStock").textContent = stockCount;
+  if ($("statOrders") && orderCount !== null) $("statOrders").textContent = orderCount;
+}
+
 function renderShopkeeperProducts() {
 
   const box =
@@ -2650,11 +2679,10 @@ function renderShopkeeperProducts() {
 
   if (!box) return;
 
+  renderShopkeeperStats();
+
   if (!products.length) {
-
-    box.innerHTML =
-      "<p>No products yet.</p>";
-
+    box.innerHTML = "<p>No products yet.</p>";
     return;
   }
 
