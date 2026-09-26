@@ -1305,3 +1305,16 @@ main{max-width:1180px;margin:auto;padding:14px 18px 60px}
   .customerLoginButton{padding:9px 10px;font-size:12px}
   .headerActions .cart{padding:9px 10px}
 }
+
+.customerGuestButton{
+  width:100%;
+  padding:12px;
+  margin-top:8px;
+  border:1px solid #cbd5e1;
+  border-radius:10px;
+  background:#f8fafc;
+  color:#334155;
+  font-weight:800;
+  cursor:pointer;
+}
+.customerGuestButton:hover{background:#eef2f7}
