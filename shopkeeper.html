@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#166534">
+  <title>Shopkeeper Login - Shivam Kirana Store</title>
+  <style>
+    *{box-sizing:border-box}
+    body{margin:0;min-height:100vh;display:grid;place-items:center;background:linear-gradient(135deg,#dcfce7,#fef9c3);font-family:Arial,sans-serif;padding:20px}
+    .card{width:min(430px,100%);background:#fff;border-radius:22px;padding:28px;box-shadow:0 12px 35px #0002}
+    .logo{width:80px;height:80px;object-fit:contain;display:block;margin:0 auto 12px}
+    h1{text-align:center;margin:0 0 6px;color:#14532d}
+    p{text-align:center;color:#64748b;margin:0 0 22px}
+    input{width:100%;padding:14px;margin:7px 0;border:1px solid #d1d5db;border-radius:12px;font-size:16px}
+    button{width:100%;padding:14px;margin-top:10px;border:0;border-radius:12px;background:#16a34a;color:white;font-size:16px;font-weight:800}
+    button:disabled{opacity:.6}
+    #status{text-align:center;margin-top:14px;min-height:22px;font-weight:700}
+    .back{background:#e5e7eb;color:#111827}
+    .note{font-size:13px;margin-top:18px}
+  </style>
+</head>
+<body>
+  <main class="card">
+    <img class="logo" src="file_00000000b0fc820892f849140911788b.png" alt="Shivam Kirana Store">
+    <h1>👨‍💼 Shopkeeper Login</h1>
+    <p>Private store management</p>
+
+    <form id="loginForm">
+      <input id="email" type="email" autocomplete="username" placeholder="Shopkeeper email" required>
+      <input id="password" type="password" autocomplete="current-password" placeholder="Password" required>
+      <button id="loginBtn" type="submit">🔐 Login</button>
+    </form>
+
+    <div id="status"></div>
+
+    <button class="back" type="button" onclick="location.href='index.html'">← Back to Store</button>
+    <p class="note">Only an authenticated Supabase user with the <b>shopkeeper</b> role can access the dashboard.</p>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const SUPABASE_URL="https://mwvypqlchvrfbafwtdwp.supabase.co";
+    const SUPABASE_KEY="sb_publishable_oS5NBiW-0z6T_awwAkbJxA_Vh0YeFCC";
+    const client=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+    const statusEl=document.getElementById("status");
+    const btn=document.getElementById("loginBtn");
+
+    document.getElementById("loginForm").addEventListener("submit",async e=>{
+      e.preventDefault();
+      statusEl.textContent="Signing in…";
+      btn.disabled=true;
+      const email=document.getElementById("email").value.trim();
+      const password=document.getElementById("password").value;
+
+      const {data,error}=await client.auth.signInWithPassword({email,password});
+      if(error){
+        statusEl.textContent="❌ "+error.message;
+        btn.disabled=false;
+        return;
+      }
+
+      const {data:profile,error:profileError}=await client
+        .from("profiles").select("role").eq("id",data.user.id).maybeSingle();
+
+      if(profileError || profile?.role!=="shopkeeper"){
+        await client.auth.signOut();
+        statusEl.textContent="❌ This account is not a shopkeeper account.";
+        btn.disabled=false;
+        return;
+      }
+
+      statusEl.textContent="✅ Login successful. Opening dashboard…";
+      location.href="index.html#shopkeeper";
+    });
+  </script>
+</body>
+</html>
