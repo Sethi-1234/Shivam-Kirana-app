@@ -1898,6 +1898,10 @@ function openCustomerLogin() {
         ✨ Create New Account
       </button>
 
+      <button class="customerGuestButton" type="button" onclick="continueAsGuest()">
+        👤 Continue as Guest
+      </button>
+
       <p id="customerAuthStatus" class="customerAuthStatus"></p>
 
       <div class="customerGuestNote">
@@ -1933,6 +1937,11 @@ function toggleCustomerSignup() {
 
 function closeCustomerLogin() {
   $("customerLogin")?.remove();
+}
+
+function continueAsGuest() {
+  closeCustomerLogin();
+  alert("👤 You are continuing as a guest. You can browse and place an order without creating an account.");
 }
 
 async function customerLogin() {
