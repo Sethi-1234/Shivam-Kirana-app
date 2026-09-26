@@ -2090,6 +2090,19 @@ function startDeliveryTracking(orderId, trackingCode) {
   deliveryTrackingCode = String(trackingCode);
   lastDeliveryLocationUpdate = 0;
 
+  supabaseClient
+    .from("orders")
+    .update({ status: "out_for_delivery" })
+    .eq("id", deliveryTrackingOrderId)
+    .then(async ({ error }) => {
+      if (error) {
+        console.error("Could not set delivery status:", error);
+      } else {
+        await broadcastTrackingUpdate(deliveryTrackingCode, { status: "out_for_delivery" });
+      }
+      await loadShopkeeperOrders();
+    });
+
   alert("🛵 Live location started. Keep this page open while delivering the order.");
 
   deliveryWatchId = navigator.geolocation.watchPosition(async position => {
