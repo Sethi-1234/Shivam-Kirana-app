@@ -694,6 +694,7 @@ function normalizeProduct(product) {
     category: String(product.category || product.cat || "General"),
     emoji: String(product.emoji || "🛒"),
     stock: product.stock == null ? 999 : Number(product.stock),
+    unit: String(product.unit || "piece").toLowerCase(),
     available: product.available !== false
   };
 }
@@ -774,7 +775,7 @@ function renderProducts() {
           </h3>
 
           <div class="price">
-            ${money(p.price)}
+            ${money(p.price)} <small style="font-weight:700">/ ${escapeHtml(p.unit || "piece")}</small>
           </div>
 
           <button
@@ -1890,6 +1891,8 @@ function openShopkeeperPanel() {
       <input
         id="productPrice"
         type="number"
+        min="0"
+        step="0.01"
         placeholder="Price"
         style="
           width:100%;
@@ -1899,6 +1902,26 @@ function openShopkeeperPanel() {
           border-radius:10px;
         "
       >
+
+      <select
+        id="productUnit"
+        style="
+          width:100%;
+          padding:12px;
+          margin:6px 0;
+          border:1px solid #ddd;
+          border-radius:10px;
+          background:white;
+        "
+      >
+        <option value="kg">kg — per kilogram</option>
+        <option value="g">g — per gram</option>
+        <option value="bottle">bottle — per bottle</option>
+        <option value="litre">litre — per litre</option>
+        <option value="piece">piece — per piece</option>
+        <option value="packet">packet — per packet</option>
+        <option value="dozen">dozen — per dozen</option>
+      </select>
 
       <input
         id="productCategory"
@@ -2070,6 +2093,10 @@ async function saveProduct() {
     $("productCategory")
       ?.value.trim();
 
+  const unit =
+    $("productUnit")
+      ?.value || "piece";
+
   const stock =
     Math.max(0, Math.floor(Number($("productStock")?.value || 0)));
 
@@ -2128,6 +2155,8 @@ async function saveProduct() {
 
           category,
 
+          unit,
+
           stock,
 
           emoji,
@@ -2154,6 +2183,8 @@ async function saveProduct() {
           price,
 
           category,
+
+          unit,
 
           stock,
 
@@ -2206,6 +2237,9 @@ function cancelProductEdit() {
 
   if ($("productCategory"))
     $("productCategory").value = "";
+
+  if ($("productUnit"))
+    $("productUnit").value = "piece";
 
   if ($("productStock"))
     $("productStock").value = "";
@@ -2268,7 +2302,7 @@ function renderShopkeeperProducts() {
 
         <br>
 
-        ${money(p.price)}
+        ${money(p.price)} / ${escapeHtml(p.unit || "piece")}
 
         <br>
 
@@ -2347,6 +2381,9 @@ function editProduct(id) {
 
   $("productCategory").value =
     p.category || "";
+
+  $("productUnit").value =
+    p.unit || "piece";
 
   $("productStock").value =
     p.stock == null ? "" : p.stock;
