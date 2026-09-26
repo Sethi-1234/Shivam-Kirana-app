@@ -1401,9 +1401,33 @@ function renderTrackingCard(order) {
         ? "<div style='padding:10px;border-radius:10px;background:#fee2e2;color:#991b1b;font-weight:800'>❌ This order was cancelled.</div>"
         : trackingStatusSteps(status)}</div>
       ${locationLink}
+      ${status === "out_for_delivery" ? `<button type="button" onclick="openCustomerInvoiceFromTracking()" style="width:100%;margin-top:12px;padding:12px;border:0;border-radius:10px;background:#111827;color:white;font-weight:900">🧾 View Invoice / Save as PDF</button>` : ""}
       <p style="font-size:12px;color:#64748b;margin-top:12px">Tracking code: ${escapeHtml(order.tracking_code || "")}</p>
       ${order.tracking_updated_at ? `<p style="font-size:12px;color:#64748b">Last location update: ${escapeHtml(new Date(order.tracking_updated_at).toLocaleString())}</p>` : ""}
     </div>`;
+}
+
+function openCustomerInvoiceFromTracking() {
+  const code = $("trackingCodeInput")?.value.trim();
+  const result = $("trackingResult");
+  const statusText = result?.querySelector("p")?.textContent || "";
+  if (!code) {
+    alert("Tracking code is required.");
+    return;
+  }
+  const totalText = result?.querySelector("strong:last-child")?.textContent || "₹0.00";
+  const orderMatch = result?.querySelector("strong")?.textContent?.match(/Order #([A-Za-z0-9-]+)/);
+  const orderNo = orderMatch ? orderMatch[1] : "Order";
+  const html = `<!doctype html><html><head><meta charset="utf-8"><title>Invoice - Shivam Kirana Store</title>
+  <style>body{font-family:Arial,sans-serif;background:#f3f4f6;padding:24px}.invoice{max-width:700px;margin:auto;background:#fff;padding:28px;border-radius:16px}h1{margin-top:0}table{width:100%;border-collapse:collapse;margin-top:20px}td{padding:10px;border-bottom:1px solid #ddd}.total{text-align:right;font-size:22px;font-weight:900;margin-top:18px}.actions{margin-top:24px}@media print{body{background:#fff;padding:0}.invoice{box-shadow:none}.actions{display:none}}</style></head>
+  <body><div class="invoice"><h1>🛒 Shivam Kirana Store</h1><p>Customer Invoice</p><hr>
+  <p><b>Order:</b> ${orderNo}<br><b>Tracking ID:</b> ${code}<br><b>Status:</b> Out for Delivery</p>
+  <table><tr><td><b>Order Total</b></td><td style="text-align:right"><b>${totalText}</b></td></tr></table>
+  <div class="total">Total: ${totalText}</div><p>🚚 Your order is out for delivery.</p>
+  <div class="actions"><button onclick="window.print()">🖨️ Print / Save as PDF</button></div></div></body></html>`;
+  const w = window.open("about:blank","_blank");
+  if (!w) { alert("Please allow pop-ups to view the invoice."); return; }
+  w.document.open(); w.document.write(html); w.document.close(); w.focus();
 }
 
 async function copyTrackingCode() {
