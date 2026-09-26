@@ -1214,3 +1214,94 @@ main{max-width:1180px;margin:auto;padding:14px 18px 60px}
   .wishlist-panel{width:100%}
   .wishlist-heart{width:34px;height:34px;font-size:21px}
 }
+
+
+/* =========================================================
+   CUSTOMER LOGIN + ACCOUNT
+   ========================================================= */
+.headerActions{
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.customerLoginButton{
+  border:1px solid #dbe3ef;
+  background:#fff;
+  color:#0b57d0;
+  border-radius:22px;
+  padding:10px 14px;
+  font-weight:800;
+  cursor:pointer;
+  white-space:nowrap;
+}
+.customerLoginButton:hover{
+  background:#f4f8ff;
+  border-color:#b8cff8;
+}
+.customerAuthBox,.customerAccountBox{
+  width:min(440px,100%);
+}
+.customerAuthIcon{
+  width:58px;
+  height:58px;
+  display:grid;
+  place-items:center;
+  border-radius:50%;
+  background:#eaf3ff;
+  font-size:30px;
+  margin-bottom:10px;
+}
+.customerSecondaryButton{
+  width:100%;
+  padding:12px;
+  margin-top:8px;
+  border:1px solid #dbe3ef;
+  border-radius:10px;
+  background:#fff;
+  color:#0b57d0;
+  font-weight:800;
+  cursor:pointer;
+}
+.customerAuthStatus{
+  min-height:20px;
+  margin:10px 0 0;
+  font-size:13px;
+  color:#475569;
+}
+.customerGuestNote{
+  margin-top:14px;
+  padding:10px 12px;
+  border-radius:10px;
+  background:#f8fafc;
+  color:#64748b;
+  font-size:12px;
+  line-height:1.5;
+}
+.customerAccountActions{
+  display:grid;
+  gap:9px;
+  margin-top:16px;
+}
+.customerAccountActions button{
+  width:100%;
+  padding:12px;
+  border:1px solid #dbe3ef;
+  border-radius:10px;
+  background:#fff;
+  font-weight:800;
+  cursor:pointer;
+  text-align:left;
+}
+.customerAccountActions button:hover{
+  background:#f7faff;
+}
+.customerAccountActions .logoutButton{
+  background:#fff1f2;
+  border-color:#fecdd3;
+  color:#be123c;
+}
+@media(max-width:600px){
+  .headerActions{gap:5px}
+  .customerLoginButton{padding:9px 10px;font-size:12px}
+  .headerActions .cart{padding:9px 10px}
+}
