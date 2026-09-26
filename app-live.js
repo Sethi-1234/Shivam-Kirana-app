@@ -69,6 +69,7 @@ let customerLocation = null;
 let editingProductId = null;
 
 let shopkeeperUser = null;
+let customerUser = null;
 
 let trackingChannel = null;
 let trackingCodeActive = null;
@@ -186,7 +187,9 @@ async function loadSupabase() {
     supabaseClient.auth.onAuthStateChange(async (_event, session) => {
       if (!session?.user) {
         shopkeeperUser = null;
+        customerUser = null;
         updateShopkeeperInterface();
+        updateCustomerInterface();
         return;
       }
 
@@ -197,11 +200,23 @@ async function loadSupabase() {
           .eq("id", session.user.id)
           .maybeSingle();
 
-        shopkeeperUser =
-          profile?.role === "shopkeeper" ? session.user : null;
+        if (profile?.role === "shopkeeper") {
+          shopkeeperUser = session.user;
+          customerUser = null;
+        } else {
+          shopkeeperUser = null;
+          customerUser = session.user;
+        }
+
         updateShopkeeperInterface();
+        updateCustomerInterface();
       } catch (error) {
         console.error("Auth/profile check failed:", error);
+        // Customer auth does not require a profile row.
+        shopkeeperUser = null;
+        customerUser = session.user;
+        updateShopkeeperInterface();
+        updateCustomerInterface();
       }
     });
   }
@@ -1800,6 +1815,268 @@ Thank you.`;
 }
 
 
+
+
+/* =========================
+   CUSTOMER LOGIN / ACCOUNT
+========================= */
+
+function customerDisplayName() {
+  return String(
+    customerUser?.user_metadata?.full_name ||
+    customerUser?.email?.split("@")[0] ||
+    "Customer"
+  );
+}
+
+function updateCustomerInterface() {
+  const button = $("customerLoginButton");
+  const quick = $("customerLoginQuickAction");
+
+  if (customerUser) {
+    if (button) button.innerHTML = "👤 " + escapeHtml(customerDisplayName());
+    if (quick) quick.innerHTML = "👤 My Account";
+    if (quick) quick.setAttribute("onclick", "openCustomerAccount()");
+  } else {
+    if (button) button.textContent = "👤 Login";
+    if (quick) quick.innerHTML = "👤 Customer Login";
+    if (quick) quick.setAttribute("onclick", "openCustomerLogin()");
+  }
+}
+
+function customerPrefillCheckout() {
+  if (!customerUser) return;
+
+  const name = customerUser.user_metadata?.full_name;
+  const phone = customerUser.user_metadata?.phone;
+
+  if (name && $("name") && !$("name").value.trim()) {
+    $("name").value = name;
+  }
+
+  if (phone && $("phone") && !$("phone").value.trim()) {
+    $("phone").value = phone;
+  }
+}
+
+function openCustomerLogin() {
+  if (customerUser) {
+    openCustomerAccount();
+    return;
+  }
+
+  let modal = $("customerLogin");
+  if (modal) {
+    modal.classList.remove("hidden");
+    return;
+  }
+
+  modal = document.createElement("div");
+  modal.id = "customerLogin";
+  modal.className = "modal";
+  modal.innerHTML = `
+    <div class="modalBox customerAuthBox">
+      <button class="close" type="button" onclick="closeCustomerLogin()">✕</button>
+
+      <div class="customerAuthIcon">👤</div>
+      <h2>Customer Login</h2>
+      <p class="smallText">Login to save your details and use your account on Shivam Kirana Store.</p>
+
+      <input id="customerEmail" type="email" autocomplete="email" placeholder="Email address">
+      <input id="customerPassword" type="password" autocomplete="current-password" placeholder="Password">
+
+      <div id="customerSignupFields" class="hidden">
+        <input id="customerName" type="text" autocomplete="name" placeholder="Your full name">
+        <input id="customerPhone" type="tel" autocomplete="tel" placeholder="Phone number">
+      </div>
+
+      <button id="customerAuthButton" class="primary" type="button" onclick="customerLogin()">
+        🔐 Login
+      </button>
+
+      <button id="customerSignupButton" class="customerSecondaryButton" type="button" onclick="toggleCustomerSignup()">
+        ✨ Create New Account
+      </button>
+
+      <p id="customerAuthStatus" class="customerAuthStatus"></p>
+
+      <div class="customerGuestNote">
+        You can also continue as a guest and place an order without logging in.
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+}
+
+function toggleCustomerSignup() {
+  const fields = $("customerSignupFields");
+  const button = $("customerAuthButton");
+  const toggle = $("customerSignupButton");
+  if (!fields || !button || !toggle) return;
+
+  const signupMode = fields.classList.toggle("hidden");
+
+  if (signupMode) {
+    button.textContent = "✨ Create Account";
+    button.onclick = customerSignUp;
+    toggle.textContent = "↩️ Back to Login";
+  } else {
+    button.textContent = "🔐 Login";
+    button.onclick = customerLogin;
+    toggle.textContent = "✨ Create New Account";
+  }
+
+  const status = $("customerAuthStatus");
+  if (status) status.textContent = "";
+}
+
+function closeCustomerLogin() {
+  $("customerLogin")?.remove();
+}
+
+async function customerLogin() {
+  const email = $("customerEmail")?.value.trim();
+  const password = $("customerPassword")?.value;
+  const status = $("customerAuthStatus");
+
+  if (!email || !password) {
+    if (status) status.textContent = "Please enter your email and password.";
+    return;
+  }
+
+  if (!supabaseClient) {
+    if (status) status.textContent = "Database connection is not ready. Please try again.";
+    return;
+  }
+
+  if (status) status.textContent = "Logging in...";
+
+  const { data, error } = await supabaseClient.auth.signInWithPassword({
+    email,
+    password
+  });
+
+  if (error) {
+    if (status) status.textContent = "❌ " + error.message;
+    return;
+  }
+
+  customerUser = data.user;
+  updateCustomerInterface();
+  customerPrefillCheckout();
+  closeCustomerLogin();
+  alert("✅ Welcome back, " + customerDisplayName() + "!");
+}
+
+async function customerSignUp() {
+  const email = $("customerEmail")?.value.trim();
+  const password = $("customerPassword")?.value;
+  const name = $("customerName")?.value.trim();
+  const phone = $("customerPhone")?.value.trim();
+  const status = $("customerAuthStatus");
+
+  if (!name || !email || !password) {
+    if (status) status.textContent = "Please enter your name, email and password.";
+    return;
+  }
+
+  if (password.length < 6) {
+    if (status) status.textContent = "Password must be at least 6 characters.";
+    return;
+  }
+
+  if (!supabaseClient) {
+    if (status) status.textContent = "Database connection is not ready. Please try again.";
+    return;
+  }
+
+  if (status) status.textContent = "Creating account...";
+
+  const { data, error } = await supabaseClient.auth.signUp({
+    email,
+    password,
+    options: {
+      data: {
+        full_name: name,
+        phone
+      }
+    }
+  });
+
+  if (error) {
+    if (status) status.textContent = "❌ " + error.message;
+    return;
+  }
+
+  if (data.session?.user) {
+    customerUser = data.session.user;
+    updateCustomerInterface();
+    customerPrefillCheckout();
+    closeCustomerLogin();
+    alert("✅ Customer account created successfully.");
+  } else {
+    if (status) {
+      status.textContent = "✅ Account created. Check your email to confirm your account, then log in.";
+    }
+  }
+}
+
+function openCustomerAccount() {
+  if (!customerUser) {
+    openCustomerLogin();
+    return;
+  }
+
+  let modal = $("customerAccount");
+  if (modal) {
+    modal.classList.remove("hidden");
+    return;
+  }
+
+  modal = document.createElement("div");
+  modal.id = "customerAccount";
+  modal.className = "modal";
+  modal.innerHTML = `
+    <div class="modalBox customerAccountBox">
+      <button class="close" type="button" onclick="closeCustomerAccount()">✕</button>
+
+      <div class="customerAuthIcon">👤</div>
+      <h2>My Account</h2>
+      <p><b>${escapeHtml(customerDisplayName())}</b></p>
+      <p class="smallText">${escapeHtml(customerUser.email || "")}</p>
+
+      <div class="customerAccountActions">
+        <button type="button" onclick="closeCustomerAccount();openOrderTrackingPrompt()">📦 Track My Order</button>
+        <button type="button" onclick="closeCustomerAccount();openWishlist()">❤️ My Wishlist</button>
+        <button type="button" onclick="closeCustomerAccount();openCart()">🛒 My Cart</button>
+        <button type="button" class="logoutButton" onclick="customerLogout()">🔐 Logout</button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+}
+
+function closeCustomerAccount() {
+  $("customerAccount")?.remove();
+}
+
+async function customerLogout() {
+  if (supabaseClient) {
+    const { error } = await supabaseClient.auth.signOut();
+    if (error) {
+      alert("Could not log out: " + error.message);
+      return;
+    }
+  }
+
+  customerUser = null;
+  updateCustomerInterface();
+  closeCustomerAccount();
+  alert("✅ You have been logged out.");
+}
+
 /* =========================
    SHOPKEEPER LOGIN
 ========================= */
@@ -3277,6 +3554,7 @@ async function initApp() {
 
   setupButtons();
   updateShopkeeperInterface();
+  updateCustomerInterface();
 
   setupSearch();
 
