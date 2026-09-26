@@ -1291,6 +1291,21 @@ function renderTrackingCard(order) {
     </div>`;
 }
 
+async function copyTrackingCode() {
+  const code = $("trackingCodeInput")?.value.trim();
+  if (!code) {
+    alert("No tracking code available.");
+    return;
+  }
+
+  try {
+    await navigator.clipboard.writeText(code);
+    alert("✅ Tracking code copied.");
+  } catch (e) {
+    alert("Tracking code: " + code);
+  }
+}
+
 async function fetchOrderTracking(code) {
   if (!supabaseClient) return null;
   const cleanCode = String(code || "").trim();
@@ -1359,6 +1374,7 @@ async function openOrderTracking(code) {
         <p style="color:#64748b">Enter the tracking code you received after placing the order.</p>
         <input id="trackingCodeInput" value="${escapeHtml(cleanCode)}" placeholder="Tracking code" style="width:100%;padding:12px;border:1px solid #ddd;border-radius:10px;box-sizing:border-box">
         <button onclick="loadTrackingFromInput()" style="width:100%;padding:12px;margin-top:8px;border:0;border-radius:10px;background:#2563eb;color:white;font-weight:800">🔎 Track Order</button>
+        <button onclick="copyTrackingCode()" style="width:100%;padding:11px;margin-top:8px;border:1px solid #cbd5e1;border-radius:10px;background:white;color:#334155;font-weight:800">📋 Copy Tracking Code</button>
         <div id="trackingResult" style="margin-top:14px"></div>
       </div>`;
     document.body.appendChild(panel);
@@ -1382,8 +1398,18 @@ async function loadTrackingFromInput() {
 }
 
 function openOrderTrackingPrompt() {
-  const code = prompt("Enter your order tracking code:");
-  if (code) openOrderTracking(code.trim());
+  let code = "";
+  try {
+    code = localStorage.getItem("shivam_last_tracking_code") || "";
+  } catch (e) {}
+
+  if (code) {
+    openOrderTracking(code.trim());
+    return;
+  }
+
+  const entered = prompt("Enter your order tracking code:");
+  if (entered) openOrderTracking(entered.trim());
 }
 
 async function closeOrderTracking() {
@@ -1570,6 +1596,14 @@ async function sendOrderToWhatsApp() {
   const finalTotal = serverTotal;
 
   const finalTrackingCode = savedOrder.tracking_code;
+
+  // Keep the latest tracking code on this device so the customer can
+  // reopen tracking without typing the code again.
+  try {
+    localStorage.setItem("shivam_last_tracking_code", finalTrackingCode);
+  } catch (e) {
+    console.warn("Could not save tracking code locally:", e);
+  }
 
   const secureLines = rpcItems.map(item => {
     const product = products.find(
