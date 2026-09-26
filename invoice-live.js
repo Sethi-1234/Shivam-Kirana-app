@@ -52,7 +52,7 @@
     </div></body></html>`;
   }
   async function getInvoiceOrder(orderId){
-    if(!window.shopkeeperUser || !window.supabaseClient){
+    if(!shopkeeperUser || !supabaseClient){
       alert("Please login as shopkeeper first."); return null;
     }
     const a=await window.supabaseClient.from("orders").select("*").eq("id",orderId).single();
