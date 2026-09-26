@@ -1,4 +1,8 @@
-/* SHIVAM KIRANA STORE - COMPLETE APP.JS v2
+/* SHIVAM KIRANA STORE - COMPLETE APP.JS v3
+   Added secure order tracking, status confirmation, and live delivery GPS.
+*/
+/* Original header follows. */
+
    Fixed shopkeeper auth/session handling, product stock saving,
    cart stock limits, and UPI payment button rendering.
 */
@@ -68,6 +72,13 @@ let customerLocation = null;
 let editingProductId = null;
 
 let shopkeeperUser = null;
+
+let trackingChannel = null;
+let trackingCodeActive = null;
+let deliveryWatchId = null;
+let deliveryTrackingOrderId = null;
+let deliveryTrackingCode = null;
+let lastDeliveryLocationUpdate = 0;
 
 
 /* =========================
@@ -358,6 +369,10 @@ function setupQuickActions() {
 
     <button onclick="openShopkeeperLogin()">
       👨‍💼 Shopkeeper
+    </button>
+
+    <button onclick="openOrderTrackingPrompt()">
+      📦 Track Order
     </button>
 
     <button onclick="openWhatsApp()">
@@ -1188,6 +1203,177 @@ function payByUPI() {
 
 
 /* =========================
+   ORDER TRACKING
+========================= */
+
+function createTrackingCode() {
+  if (window.crypto?.randomUUID) return window.crypto.randomUUID();
+  return "trk-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 12);
+}
+
+function trackingStatusLabel(status) {
+  const labels = {
+    new: "Order received",
+    confirmed: "Order confirmed",
+    preparing: "Preparing your order",
+    out_for_delivery: "Out for delivery",
+    delivered: "Delivered",
+    cancelled: "Cancelled"
+  };
+  return labels[status] || "Order status: " + status;
+}
+
+function trackingStatusSteps(status) {
+  const steps = [
+    ["new", "📥", "Order received"],
+    ["confirmed", "✅", "Confirmed"],
+    ["preparing", "📦", "Preparing"],
+    ["out_for_delivery", "🛵", "Out for delivery"],
+    ["delivered", "🎉", "Delivered"]
+  ];
+  const order = ["new", "confirmed", "preparing", "out_for_delivery", "delivered"];
+  const currentIndex = order.indexOf(status);
+  return steps.map(([key, icon, label]) => {
+    const done = currentIndex >= order.indexOf(key) && status !== "cancelled";
+    const current = key === status;
+    return `
+      <div style="display:flex;align-items:center;gap:10px;padding:9px 0">
+        <div style="width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:${done ? "#16a34a" : "#e5e7eb"};color:${done ? "white" : "#64748b"}">${icon}</div>
+        <div style="font-weight:${current ? "800" : "600"}">${escapeHtml(label)}</div>
+      </div>`;
+  }).join("");
+}
+
+function renderTrackingCard(order) {
+  const box = $("trackingResult");
+  if (!box || !order) return;
+  const status = order.status || "new";
+  const locationLink = order.delivery_latitude != null && order.delivery_longitude != null
+    ? `<a href="https://www.google.com/maps?q=${encodeURIComponent(order.delivery_latitude + "," + order.delivery_longitude)}" target="_blank" rel="noopener" style="display:inline-block;margin-top:10px;padding:10px 12px;border-radius:10px;background:#2563eb;color:white;text-decoration:none;font-weight:800">📍 Open live delivery location</a>`
+    : `<p style="margin:8px 0;color:#64748b">🛵 Live delivery location will appear when the shopkeeper starts tracking.</p>`;
+
+  box.innerHTML = `
+    <div style="border:1px solid #dbeafe;border-radius:16px;padding:16px;background:#f8fbff">
+      <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap">
+        <strong>📦 Order #${escapeHtml(String(order.order_id || "").slice(0,8))}</strong>
+        <strong>${money(order.total_amount)}</strong>
+      </div>
+      <p style="margin:8px 0"><b>Status:</b> ${escapeHtml(trackingStatusLabel(status))}</p>
+      <div style="margin:10px 0">${status === "cancelled"
+        ? "<div style='padding:10px;border-radius:10px;background:#fee2e2;color:#991b1b;font-weight:800'>❌ This order was cancelled.</div>"
+        : trackingStatusSteps(status)}</div>
+      ${locationLink}
+      <p style="font-size:12px;color:#64748b;margin-top:12px">Tracking code: ${escapeHtml(order.tracking_code || "")}</p>
+      ${order.tracking_updated_at ? `<p style="font-size:12px;color:#64748b">Last location update: ${escapeHtml(new Date(order.tracking_updated_at).toLocaleString())}</p>` : ""}
+    </div>`;
+}
+
+async function fetchOrderTracking(code) {
+  if (!supabaseClient) return null;
+  const cleanCode = String(code || "").trim();
+  if (!cleanCode) return null;
+
+  const { data, error } = await supabaseClient.rpc("get_order_tracking", {
+    p_tracking_code: cleanCode
+  });
+
+  if (error) {
+    console.error("Tracking lookup error:", error);
+    const box = $("trackingResult");
+    if (box) box.innerHTML = "<p style='color:#b91c1c;font-weight:700'>Could not load tracking. Please check the tracking code and Supabase tracking function.</p>";
+    return null;
+  }
+
+  const row = Array.isArray(data) ? data[0] : data;
+  if (!row) {
+    const box = $("trackingResult");
+    if (box) box.innerHTML = "<p style='color:#b91c1c;font-weight:700'>No order found for this tracking code.</p>";
+    return null;
+  }
+
+  renderTrackingCard(row);
+  return row;
+}
+
+async function subscribeToOrderTracking(code) {
+  if (!supabaseClient) return;
+  const cleanCode = String(code || "").trim();
+  if (!cleanCode) return;
+
+  if (trackingChannel) {
+    await supabaseClient.removeChannel(trackingChannel);
+    trackingChannel = null;
+  }
+
+  trackingCodeActive = cleanCode;
+  trackingChannel = supabaseClient
+    .channel("order:" + cleanCode)
+    .on("broadcast", { event: "tracking_update" }, payload => {
+      const update = payload?.payload || {};
+      if (update.tracking_code && update.tracking_code !== trackingCodeActive) return;
+      fetchOrderTracking(cleanCode);
+    })
+    .subscribe(status => {
+      if (status === "CHANNEL_ERROR") console.warn("Tracking realtime channel error");
+    });
+}
+
+async function openOrderTracking(code) {
+  const cleanCode = String(code || "").trim();
+  if (!cleanCode) return;
+
+  let panel = $("trackingPanel");
+  if (!panel) {
+    panel = document.createElement("div");
+    panel.id = "trackingPanel";
+    panel.style.cssText = "position:fixed;inset:0;background:#0009;z-index:95;overflow:auto;padding:16px";
+    panel.innerHTML = `
+      <div style="background:white;width:min(560px,100%);margin:20px auto;border-radius:18px;padding:20px">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:10px">
+          <h2 style="margin:0">📦 Track Your Order</h2>
+          <button onclick="closeOrderTracking()" style="border:0;background:#eee;border-radius:8px;padding:8px">✕</button>
+        </div>
+        <p style="color:#64748b">Enter the tracking code you received after placing the order.</p>
+        <input id="trackingCodeInput" value="${escapeHtml(cleanCode)}" placeholder="Tracking code" style="width:100%;padding:12px;border:1px solid #ddd;border-radius:10px;box-sizing:border-box">
+        <button onclick="loadTrackingFromInput()" style="width:100%;padding:12px;margin-top:8px;border:0;border-radius:10px;background:#2563eb;color:white;font-weight:800">🔎 Track Order</button>
+        <div id="trackingResult" style="margin-top:14px"></div>
+      </div>`;
+    document.body.appendChild(panel);
+  } else {
+    panel.classList.remove("hidden");
+    if ($("trackingCodeInput")) $("trackingCodeInput").value = cleanCode;
+  }
+
+  await fetchOrderTracking(cleanCode);
+  await subscribeToOrderTracking(cleanCode);
+}
+
+async function loadTrackingFromInput() {
+  const code = $("trackingCodeInput")?.value.trim();
+  if (!code) {
+    alert("Please enter your tracking code.");
+    return;
+  }
+  await fetchOrderTracking(code);
+  await subscribeToOrderTracking(code);
+}
+
+function openOrderTrackingPrompt() {
+  const code = prompt("Enter your order tracking code:");
+  if (code) openOrderTracking(code.trim());
+}
+
+async function closeOrderTracking() {
+  if (trackingChannel && supabaseClient) {
+    await supabaseClient.removeChannel(trackingChannel);
+  }
+  trackingChannel = null;
+  trackingCodeActive = null;
+  $("trackingPanel")?.remove();
+}
+
+
+/* =========================
    SEND ORDER
 ========================= */
 
@@ -1306,6 +1492,8 @@ async function sendOrderToWhatsApp() {
   const total =
     cartTotal();
 
+  const trackingCode = createTrackingCode();
+
 
   let locationText =
     "Location not shared";
@@ -1362,6 +1550,10 @@ Delivery Charge: FREE
 
 Total: ${money(total)}
 
+Tracking Code: ${trackingCode}
+
+Track your order on the website using this code.
+
 ${locationText}
 
 Please confirm this order.
@@ -1407,7 +1599,9 @@ Thank you.`;
 
           total_amount: total,
 
-          status: "new"
+          status: "new",
+
+          tracking_code: trackingCode
 
         })
         .select()
@@ -1442,6 +1636,15 @@ Thank you.`;
   } catch (error) {
 
     console.error(error);
+  }
+
+
+  /* SHOW CUSTOMER TRACKING */
+
+  if (savedOrder?.tracking_code) {
+    setTimeout(() => openOrderTracking(savedOrder.tracking_code), 50);
+  } else {
+    alert("⚠️ The order was sent to WhatsApp, but online tracking could not be created. Please ask the shopkeeper for confirmation.");
   }
 
 
@@ -1792,13 +1995,19 @@ async function loadShopkeeperOrders() {
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px">
           <label><b>Status</b></label>
           <select onchange="updateOrderStatus('${String(order.id)}', this.value)" style="padding:9px;border:1px solid #d1d5db;border-radius:9px">
-            <option value="new" ${status==="new"?"selected":""}>New</option>
+            <option value="new" ${status==="new"?"selected":""}>New / Received</option>
+            <option value="confirmed" ${status==="confirmed"?"selected":""}>Confirmed</option>
             <option value="preparing" ${status==="preparing"?"selected":""}>Preparing</option>
             <option value="out_for_delivery" ${status==="out_for_delivery"?"selected":""}>Out for Delivery</option>
             <option value="delivered" ${status==="delivered"?"selected":""}>Delivered</option>
             <option value="cancelled" ${status==="cancelled"?"selected":""}>Cancelled</option>
           </select>
+          ${order.tracking_code
+            ? `<button onclick="startDeliveryTracking('${String(order.id)}','${escapeHtml(order.tracking_code)}')" style="padding:9px;border:0;border-radius:9px;background:#16a34a;color:white;font-weight:800">🛵 Start Live Location</button>
+               <button onclick="stopDeliveryTracking()" style="padding:9px;border:0;border-radius:9px;background:#dc2626;color:white;font-weight:800">⏹ Stop Location</button>`
+            : ""}
         </div>
+        ${order.tracking_code ? `<p style="font-size:12px;color:#64748b;margin:7px 0">Tracking code: ${escapeHtml(order.tracking_code)}</p>` : ""}
       </div>`;
   }).join("");
 }
@@ -1806,18 +2015,131 @@ async function loadShopkeeperOrders() {
 async function updateOrderStatus(orderId, status) {
   if (!shopkeeperUser || !supabaseClient) return;
 
-  const { error } = await supabaseClient
+  const { data: order, error } = await supabaseClient
+    .from("orders")
+    .select("id,tracking_code,status,delivery_latitude,delivery_longitude,tracking_updated_at")
+    .eq("id", orderId)
+    .single();
+
+  if (error || !order) {
+    console.error(error);
+    alert("Could not read this order. Check Supabase RLS policies.");
+    return;
+  }
+
+  const { error: updateError } = await supabaseClient
     .from("orders")
     .update({ status })
     .eq("id", orderId);
 
-  if (error) {
-    console.error(error);
+  if (updateError) {
+    console.error(updateError);
     alert("Could not update order status. Check Supabase RLS policies.");
     return;
   }
 
+  if (order.tracking_code) {
+    await broadcastTrackingUpdate(order.tracking_code, {
+      status,
+      delivery_latitude: order.delivery_latitude,
+      delivery_longitude: order.delivery_longitude,
+      tracking_updated_at: order.tracking_updated_at
+    });
+  }
+
+  if (status === "delivered" || status === "cancelled") {
+    if (deliveryTrackingOrderId === String(orderId)) stopDeliveryTracking();
+  }
+
   await loadShopkeeperOrders();
+}
+
+async function broadcastTrackingUpdate(code, payload = {}) {
+  if (!supabaseClient || !code) return;
+  const channel = supabaseClient.channel("order:" + code);
+  try {
+    await channel.send({
+      type: "broadcast",
+      event: "tracking_update",
+      payload: {
+        tracking_code: code,
+        ...payload
+      }
+    });
+  } catch (error) {
+    console.warn("Tracking broadcast failed:", error);
+  } finally {
+    await supabaseClient.removeChannel(channel);
+  }
+}
+
+function startDeliveryTracking(orderId, trackingCode) {
+  if (!shopkeeperUser || !supabaseClient) {
+    alert("Please login as shopkeeper first.");
+    return;
+  }
+
+  if (!navigator.geolocation) {
+    alert("This device/browser does not support GPS location.");
+    return;
+  }
+
+  stopDeliveryTracking();
+
+  deliveryTrackingOrderId = String(orderId);
+  deliveryTrackingCode = String(trackingCode);
+  lastDeliveryLocationUpdate = 0;
+
+  alert("🛵 Live location started. Keep this page open while delivering the order.");
+
+  deliveryWatchId = navigator.geolocation.watchPosition(async position => {
+    const now = Date.now();
+    if (now - lastDeliveryLocationUpdate < 5000) return;
+    lastDeliveryLocationUpdate = now;
+
+    const latitude = position.coords.latitude;
+    const longitude = position.coords.longitude;
+    const tracking_updated_at = new Date().toISOString();
+
+    const { error } = await supabaseClient
+      .from("orders")
+      .update({
+        delivery_latitude: latitude,
+        delivery_longitude: longitude,
+        tracking_updated_at
+      })
+      .eq("id", deliveryTrackingOrderId);
+
+    if (error) {
+      console.error(error);
+      return;
+    }
+
+    await broadcastTrackingUpdate(deliveryTrackingCode, {
+      status: "out_for_delivery",
+      delivery_latitude: latitude,
+      delivery_longitude: longitude,
+      tracking_updated_at
+    });
+  }, error => {
+    console.error(error);
+    alert("GPS could not be read. Keep location permission enabled for this device.");
+    stopDeliveryTracking();
+  }, {
+    enableHighAccuracy: true,
+    maximumAge: 3000,
+    timeout: 15000
+  });
+}
+
+function stopDeliveryTracking() {
+  if (deliveryWatchId !== null && navigator.geolocation) {
+    navigator.geolocation.clearWatch(deliveryWatchId);
+  }
+  deliveryWatchId = null;
+  deliveryTrackingOrderId = null;
+  deliveryTrackingCode = null;
+  lastDeliveryLocationUpdate = 0;
 }
 
 /* =========================
@@ -2230,6 +2552,8 @@ async function saveProduct() {
           unit,
 
           stock,
+
+          stock_unit,
 
           emoji,
 
