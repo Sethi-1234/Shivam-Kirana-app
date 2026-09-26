@@ -1614,6 +1614,14 @@ Thank you.`;
           error
         );
 
+        alert(
+          "❌ Order could not be saved to the database.\n\n" +
+          error.message +
+          "\n\nPlease send me a screenshot of this error."
+        );
+
+        return;
+
       } else {
 
         savedOrder = data;
