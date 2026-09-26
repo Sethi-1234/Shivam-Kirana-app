@@ -88,7 +88,8 @@
   window.trackSavedOrder = function (code) {
     closeStoreFeatureModal();
     if (typeof window.openOrderTracking === "function") {
-      localStorage.setItem("shivam_last_tracking_code", code);\n      window.openOrderTrackingPrompt();
+      localStorage.setItem("shivam_last_tracking_code", code);
+      window.openOrderTrackingPrompt();
     } else if (typeof window.openOrderTrackingPrompt === "function") {
       window.openOrderTrackingPrompt();
     }
