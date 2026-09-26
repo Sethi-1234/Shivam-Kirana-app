@@ -273,6 +273,11 @@ BEGIN
     END IF;
 
     v_total := v_total + (v_unit_price * v_quantity);
+
+    -- Reserve the stock atomically while the product row is locked.
+    UPDATE public.products
+    SET stock = stock - v_quantity
+    WHERE id = v_product_id;
   END LOOP;
 
   INSERT INTO public.orders (
@@ -321,6 +326,7 @@ BEGIN
       product_id,
       product_name,
       quantity,
+      price,
       unit_price,
       line_total
     )
@@ -329,6 +335,7 @@ BEGIN
       v_product_id,
       v_product_name,
       v_quantity,
+      v_unit_price,
       v_unit_price,
       v_unit_price * v_quantity
     );
