@@ -1318,3 +1318,38 @@ main{max-width:1180px;margin:auto;padding:14px 18px 60px}
   cursor:pointer;
 }
 .customerGuestButton:hover{background:#eef2f7}
+
+
+/* =========================================================
+   STORE UPGRADE PACK 1-8
+   ========================================================= */
+.featureModalBox{max-width:560px}
+.featureModalBody{color:#334155}
+.featureMuted{color:#64748b;font-size:13px}
+.featureEmpty{text-align:center;padding:35px 10px;color:#64748b}
+.ordersHistoryList{display:grid;gap:10px}
+.historyOrder{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:13px;border:1px solid #e2e8f0;border-radius:12px;background:#f8fafc}
+.trackingBadge{display:inline-block;margin-top:5px;padding:5px 9px;border-radius:8px;background:#eaf3ff;color:#0b57d0;font-weight:800}
+.couponGrid{display:grid;gap:10px}
+.couponCard{display:grid;gap:5px;padding:14px;border:1px dashed #93c5fd;border-radius:12px;background:#f8fbff}
+.couponCard b{color:#0b57d0;font-size:18px;letter-spacing:.5px}
+.couponCard span{font-size:13px;color:#64748b}
+.couponCard button{justify-self:start;border:1px solid #b8cff8;background:#fff;color:#0b57d0;border-radius:8px;padding:7px 10px;font-weight:700;cursor:pointer}
+.reviewButton{width:100%;margin-top:7px;padding:9px;border:1px solid #dbe3ef;border-radius:9px;background:#fff;color:#0b57d0;font-weight:800;cursor:pointer}
+.reviewButton:hover{background:#f7faff}
+.reviewSummary{padding:10px;border-radius:10px;background:#fffbeb;margin-bottom:10px;font-weight:800}
+.reviewList{display:grid;gap:8px;max-height:240px;overflow:auto}
+.reviewItem{padding:10px;border:1px solid #e5e7eb;border-radius:10px;background:#fff}
+.reviewItem p{margin:5px 0 0;color:#475569}
+.paymentFeature{display:grid;gap:10px}
+.paymentFeature>div{display:grid;gap:3px;padding:13px;border:1px solid #e5e7eb;border-radius:11px}
+.paymentFeature span{font-size:13px;color:#64748b}
+#mobileBottomNav{display:none}
+@media(max-width:600px){
+  body{padding-bottom:72px}
+  #mobileBottomNav{position:fixed;display:grid;grid-template-columns:repeat(5,1fr);left:0;right:0;bottom:0;height:64px;background:rgba(255,255,255,.97);border-top:1px solid #dbe3ef;box-shadow:0 -6px 20px rgba(15,23,42,.10);z-index:1400;padding-bottom:env(safe-area-inset-bottom)}
+  #mobileBottomNav button{border:0;background:transparent;color:#334155;font-size:10px;font-weight:800;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer}
+  #mobileBottomNav button span{font-size:21px}
+  #mobileBottomNav button:active{transform:scale(.96)}
+  .featureModalBox{max-height:90vh}
+}
