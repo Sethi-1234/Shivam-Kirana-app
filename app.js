@@ -31,7 +31,7 @@ const STORE = {
 
   pickup: true,
 
-  logo: "logo.png"
+  logo: "file_00000000b0fc820892f849140911788b.png"
 };
 
 
@@ -176,7 +176,7 @@ function setupLogo() {
   if (!brand) return;
 
   const existing =
-    brand.querySelector(".storeLogo");
+    brand.querySelector(".logo, .storeLogo");
 
   if (existing) return;
 
