@@ -226,9 +226,24 @@
       '<button type="button" onclick="openMyOrders()"><span>📦</span>Orders</button>' +
       '<button type="button" onclick="openWishlist()"><span>❤️</span>Wishlist</button>' +
       '<button type="button" onclick="openCart()"><span>🛒</span>Cart</button>' +
-      '<button type="button" onclick="openCustomerLogin()"><span>👤</span>Account</button>';
+      '<button type="button" onclick="openMoreMenu()"><span>☰</span>More</button>';
     document.body.appendChild(nav);
   }
+
+  window.openMoreMenu = function () {
+    showFeatureModal("☰ More Options",
+      '<div class="moreMenuGrid">' +
+      '<button type="button" onclick="closeFeatureModal();openOrderTrackingPrompt()">📍 Track Order</button>' +
+      '<button type="button" onclick="closeFeatureModal();showHelp()">❓ Help</button>' +
+      '<button type="button" onclick="closeFeatureModal();showContact()">💬 WhatsApp</button>' +
+      '<button type="button" onclick="closeFeatureModal();openCoupons()">🎁 Offers</button>' +
+      '<button type="button" onclick="closeFeatureModal();showPaymentOptions()">💳 Payment</button>' +
+      '<button type="button" onclick="closeFeatureModal();showContact()">📞 Contact</button>' +
+      '<button type="button" onclick="closeFeatureModal();alert("Delivery: 10 AM - 7 PM")">🚚 Delivery</button>' +
+      '<button type="button" onclick="closeFeatureModal();alert("Store pickup is available.")">🏪 Pickup</button>' +
+      '<button type="button" onclick="closeFeatureModal();openCustomerLogin()">👤 Account / Login</button>' +
+      '</div>');
+  };
 
   /* ---------------------------------------------------------
      Product review button: attaches after products render.
