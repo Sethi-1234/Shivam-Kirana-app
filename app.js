@@ -80,6 +80,19 @@ function money(value) {
   return "₹" + Number(value || 0).toFixed(0);
 }
 
+function unitLabel(unit) {
+  const labels = {
+    kg: "kg",
+    g: "g",
+    bottle: "1 bottle",
+    litre: "litre",
+    piece: "piece",
+    packet: "packet",
+    dozen: "dozen"
+  };
+  return labels[String(unit || "piece").toLowerCase()] || String(unit || "piece");
+}
+
 function saveCart() {
   localStorage.setItem(
     "shivamCart",
@@ -775,7 +788,7 @@ function renderProducts() {
           </h3>
 
           <div class="price">
-            ${money(p.price)} <small style="font-weight:700">/ ${escapeHtml(p.unit || "piece")}</small>
+            ${money(p.price)} <small style="font-weight:700">/ ${escapeHtml(unitLabel(p.unit))}</small>
           </div>
 
           <button
@@ -2302,7 +2315,7 @@ function renderShopkeeperProducts() {
 
         <br>
 
-        ${money(p.price)} / ${escapeHtml(p.unit || "piece")}
+        ${money(p.price)} / ${escapeHtml(unitLabel(p.unit))}
 
         <br>
 
