@@ -240,7 +240,7 @@ BEGIN
 
   -- Create the order first with a server-generated tracking code.
   v_order_id := gen_random_uuid();
-  v_tracking_code := gen_random_uuid()::text;
+  v_tracking_code := 'SK' || lpad(nextval('public.order_tracking_seq')::text, 4, '0');
 
   -- Check every product and calculate the total from trusted DB prices.
   FOR v_item IN
@@ -345,6 +345,58 @@ BEGIN
   SELECT v_order_id, v_tracking_code, v_total;
 END;
 $$;
+
+-- Sequential customer-facing tracking IDs: SK1001, SK1002, ...
+CREATE SEQUENCE IF NOT EXISTS public.order_tracking_seq START WITH 1001;
+
+-- Shopkeeper can generate an ID for an existing order that does not have one.
+CREATE OR REPLACE FUNCTION public.generate_order_tracking_code(
+  p_order_id uuid
+)
+RETURNS text
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $
+DECLARE
+  v_existing text;
+  v_code text;
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM public.profiles
+    WHERE profiles.id = (select auth.uid())
+      AND profiles.role = 'shopkeeper'
+  ) THEN
+    RAISE EXCEPTION 'Shopkeeper access required';
+  END IF;
+
+  SELECT tracking_code
+  INTO v_existing
+  FROM public.orders
+  WHERE id = p_order_id
+  FOR UPDATE;
+
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'Order not found';
+  END IF;
+
+  IF v_existing IS NOT NULL AND btrim(v_existing) <> '' THEN
+    RETURN v_existing;
+  END IF;
+
+  v_code := 'SK' || lpad(nextval('public.order_tracking_seq')::text, 4, '0');
+
+  UPDATE public.orders
+  SET tracking_code = v_code
+  WHERE id = p_order_id;
+
+  RETURN v_code;
+END;
+$;
+
+REVOKE EXECUTE ON FUNCTION public.generate_order_tracking_code(uuid) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.generate_order_tracking_code(uuid) TO authenticated;
 
 -- Never leave function execution open to PUBLIC.
 REVOKE EXECUTE ON FUNCTION public.create_customer_order(
