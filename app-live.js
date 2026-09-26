@@ -593,7 +593,34 @@ async function loadProductsFromDatabase() {
     return;
   }
 
+  const previousProducts = Array.isArray(products) ? [...products] : [];
+
   products = (data || []).map(normalizeProduct);
+
+  // If the customer added a fallback product while Supabase was loading,
+  // remap that cart item to the real database product with the same name.
+  if (products.length && previousProducts.length) {
+    const remappedCart = {};
+    for (const [oldId, qty] of Object.entries(cart)) {
+      const oldProduct = previousProducts.find(
+        p => String(p.id) === String(oldId)
+      );
+      const newProduct = oldProduct
+        ? products.find(
+            p => String(p.name).trim().toLowerCase() === String(oldProduct.name).trim().toLowerCase()
+          )
+        : null;
+
+      if (newProduct) {
+        remappedCart[String(newProduct.id)] =
+          Number(remappedCart[String(newProduct.id)] || 0) + Number(qty || 0);
+      } else if (products.some(p => String(p.id) === String(oldId))) {
+        remappedCart[String(oldId)] = Number(qty || 0);
+      }
+    }
+    cart = remappedCart;
+    saveCart();
+  }
 
   // If Supabase has no products marked available yet, keep the customer
   // storefront usable with the built-in starter catalogue.
