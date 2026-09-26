@@ -708,6 +708,7 @@ function normalizeProduct(product) {
     emoji: String(product.emoji || "🛒"),
     stock: product.stock == null ? 999 : Number(product.stock),
     unit: String(product.unit || "piece").toLowerCase(),
+    stock_unit: String(product.stock_unit || product.unit || "piece").toLowerCase(),
     available: product.available !== false
   };
 }
@@ -790,6 +791,10 @@ function renderProducts() {
           <div class="price">
             ${money(p.price)} <small style="font-weight:700">/ ${escapeHtml(unitLabel(p.unit))}</small>
           </div>
+
+          <small style="display:block;margin:5px 0 10px;color:#64748b">
+            Stock: ${escapeHtml(p.stock)} ${escapeHtml(unitLabel(p.stock_unit))}
+          </small>
 
           <button
             class="add"
@@ -1952,7 +1957,7 @@ function openShopkeeperPanel() {
         id="productStock"
         type="number"
         min="0"
-        step="1"
+        step="0.01"
         placeholder="Stock quantity (0 = out of stock)"
         style="
           width:100%;
@@ -1962,6 +1967,26 @@ function openShopkeeperPanel() {
           border-radius:10px;
         "
       >
+
+      <select
+        id="productStockUnit"
+        style="
+          width:100%;
+          padding:12px;
+          margin:6px 0;
+          border:1px solid #ddd;
+          border-radius:10px;
+          background:white;
+        "
+      >
+        <option value="kg">kg — kilograms</option>
+        <option value="g">g — grams</option>
+        <option value="bottle">bottle — bottles</option>
+        <option value="litre">litre — litres</option>
+        <option value="piece">piece — pieces</option>
+        <option value="packet">packet — packets</option>
+        <option value="dozen">dozen — dozens</option>
+      </select>
 
       <input
         id="productEmoji"
@@ -2111,7 +2136,10 @@ async function saveProduct() {
       ?.value || "piece";
 
   const stock =
-    Math.max(0, Math.floor(Number($("productStock")?.value || 0)));
+    Math.max(0, Number($("productStock")?.value || 0));
+
+  const stock_unit =
+    $("productStockUnit")?.value || unit;
 
   const emoji =
     $("productEmoji")
@@ -2171,6 +2199,8 @@ async function saveProduct() {
           unit,
 
           stock,
+
+          stock_unit,
 
           emoji,
 
@@ -2256,6 +2286,9 @@ function cancelProductEdit() {
 
   if ($("productStock"))
     $("productStock").value = "";
+
+  if ($("productStockUnit"))
+    $("productStockUnit").value = "piece";
 
   if ($("productEmoji"))
     $("productEmoji").value = "";
@@ -2400,6 +2433,9 @@ function editProduct(id) {
 
   $("productStock").value =
     p.stock == null ? "" : p.stock;
+
+  $("productStockUnit").value =
+    p.stock_unit || p.unit || "piece";
 
   $("productEmoji").value =
     p.emoji || "";
