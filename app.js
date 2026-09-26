@@ -1392,6 +1392,19 @@ Thank you.`;
       } else {
 
         savedOrder = data;
+
+        const orderItems = Object.keys(cart).map(id => {
+          const product = products.find(x => String(x.id) === String(id));
+          if (!product) return null;
+          const quantity = Number(cart[id] || 0);
+          const unitPrice = Number(product.price || 0);
+          return { order_id: data.id, product_id: product.id ?? null, product_name: product.name, quantity, unit_price: unitPrice, line_total: unitPrice * quantity };
+        }).filter(Boolean);
+
+        if (orderItems.length) {
+          const itemsResult = await supabaseClient.from("order_items").insert(orderItems);
+          if (itemsResult.error) console.warn("Order saved, but product line items could not be saved:", itemsResult.error);
+        }
       }
     }
 
@@ -1699,6 +1712,20 @@ async function loadShopkeeperOrders() {
     return;
   }
 
+  let itemRows = [];
+  const orderIds = (data || []).map(o => o.id).filter(Boolean);
+  if (orderIds.length) {
+    const itemsResult = await supabaseClient.from("order_items").select("*").in("order_id", orderIds);
+    if (!itemsResult.error) itemRows = itemsResult.data || [];
+    else console.warn("order_items is not available yet:", itemsResult.error);
+  }
+  const itemsByOrder = {};
+  itemRows.forEach(item => {
+    const key = String(item.order_id);
+    if (!itemsByOrder[key]) itemsByOrder[key] = [];
+    itemsByOrder[key].push(item);
+  });
+
   if (!data || !data.length) {
     box.innerHTML = "<p>No customer orders yet.</p>";
     return;
@@ -1723,6 +1750,9 @@ async function loadShopkeeperOrders() {
         ${order.pin_code ? `<p style="margin:7px 0"><b>PIN:</b> ${escapeHtml(order.pin_code)}</p>` : ""}
         <p style="margin:7px 0"><b>Payment:</b> ${escapeHtml(order.payment_method || "—")}</p>
         <p style="margin:7px 0"><b>Placed:</b> ${escapeHtml(date)}</p>
+        ${itemsByOrder[String(order.id)]?.length
+          ? `<div style="margin:9px 0;padding:10px;background:#f8fafc;border-radius:10px"><b>🛍️ Products</b><ul style="margin:7px 0 0;padding-left:20px">${itemsByOrder[String(order.id)].map(item => `<li>${escapeHtml(item.product_name || "Product")} × ${Number(item.quantity || 0)} — ${money(item.line_total ?? ((Number(item.unit_price)||0) * (Number(item.quantity)||0)))}</li>`).join("")}</ul></div>`
+          : `<p style="margin:7px 0;color:#64748b"><b>Products:</b> Product details will appear after the order_items table is enabled.</p>`}
         ${order.latitude && order.longitude
           ? `<a href="https://www.google.com/maps?q=${encodeURIComponent(order.latitude + "," + order.longitude)}" target="_blank" rel="noopener">📍 Open customer location</a>`
           : ""}
