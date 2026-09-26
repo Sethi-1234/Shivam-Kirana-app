@@ -2990,7 +2990,7 @@ function openShopkeeperPanel() {
     </div>
   `;
 
-  document.body.appendChild(panel);
+  panel.innerHTML = panel.innerHTML\n    .replaceAll("__STORE_HOURS__", escapeHtml(STORE.storeHours))\n    .replaceAll("__DELIVERY_HOURS__", escapeHtml(STORE.deliveryHours))\n    .replaceAll("__DELIVERY_TIME__", escapeHtml(STORE.deliveryTime))\n    .replace("__STORE_CHECK__", storeSettings.store_open !== false ? "checked" : "")\n    .replace("__DELIVERY_CHECK__", storeSettings.delivery_open !== false ? "checked" : "");\n\n  document.body.appendChild(panel);
 
   renderShopkeeperProducts();
   loadShopkeeperOrders();
