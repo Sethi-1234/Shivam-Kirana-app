@@ -327,7 +327,11 @@ function setupQuickActions() {
 
   if (!main) return;
 
-  if ($("quickActions")) return;
+  if ($("quickActions")) {
+    const privateButton = $("shopkeeperAccessButton");
+    if (privateButton) privateButton.remove();
+    return;
+  }
 
   const box =
     document.createElement("div");
@@ -3147,6 +3151,10 @@ async function initApp() {
 
   showHolidayNotice();
 
+  // Private shopkeeper entry: /?shopkeeper=1
+  if (new URLSearchParams(window.location.search).get("shopkeeper") === "1") {
+    setTimeout(() => openShopkeeperLogin(), 250);
+  }
 
   try {
 
