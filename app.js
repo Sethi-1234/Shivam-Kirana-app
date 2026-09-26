@@ -1035,17 +1035,38 @@ function updatePaymentInfo() {
 
   if (method === "upi") {
     info.innerHTML = `
-      <b>UPI ID</b>
-      <div style="margin:6px 0 10px">${escapeHtml(STORE.upi)}</div>
+      <b>UPI Payment</b>
+      <div style="margin:6px 0 10px">UPI ID: ${escapeHtml(STORE.upi)}</div>
       <button type="button" class="upiButton" onclick="payByUPI()"
         style="padding:10px 14px;border:0;border-radius:10px;background:#16a34a;color:white;font-weight:800;cursor:pointer;">
         💳 Pay by UPI
       </button>
     `;
-  } else if (method === "cod") {
-    info.innerHTML = "💵 Pay cash when your order is delivered.";
+  } else if (method === "qr") {
+    const amount = cartTotal().toFixed(2);
+    const upiUri = "upi://pay?pa=" + encodeURIComponent(STORE.upi) +
+      "&pn=" + encodeURIComponent(STORE.name) +
+      "&am=" + encodeURIComponent(amount) +
+      "&cu=INR";
+    info.innerHTML = `
+      <b>📱 Scan QR Code to Pay</b>
+      <p style="margin:6px 0;color:#64748b">Amount: <b>₹${amount}</b></p>
+      <div id="paymentQr" style="display:flex;justify-content:center;margin:10px 0;"></div>
+      <small>UPI ID: ${escapeHtml(STORE.upi)}</small>
+    `;
+    if (window.QRCode) {
+      new QRCode(document.getElementById("paymentQr"), {
+        text: upiUri,
+        width: 190,
+        height: 190
+      });
+    }
+  } else if (method === "card") {
+    info.innerHTML = "💳 Debit/Credit Card selected. A secure payment gateway is required to collect card details.";
+  } else if (method === "netbanking") {
+    info.innerHTML = "🏦 Net Banking selected. A secure payment gateway is required to complete payment.";
   } else {
-    info.innerHTML = "🏪 Pay when you collect your order from the store.";
+    info.innerHTML = "💵 Pay cash when your order is delivered.";
   }
 }
 
@@ -1451,9 +1472,13 @@ async function sendOrderToWhatsApp() {
 
     upi: "UPI",
 
-    cod: "Cash on Delivery",
+    qr: "QR Code / UPI QR",
 
-    store: "Pay at Store"
+    card: "Debit / Credit Card",
+
+    netbanking: "Net Banking",
+
+    cod: "Cash on Delivery"
 
   }[payment] || payment;
 
