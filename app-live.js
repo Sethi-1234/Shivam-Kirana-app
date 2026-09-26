@@ -805,6 +805,13 @@ function renderProducts() {
 
         <article class="card">
 
+          <button
+            class="wishlist-heart ${isWishlisted(p.id) ? "active" : ""}"
+            aria-label="Add to wishlist"
+            onclick="toggleWishlist('${String(p.id)}')">
+            ${isWishlisted(p.id) ? "♥" : "♡"}
+          </button>
+
           ${image}
 
           <h3>
