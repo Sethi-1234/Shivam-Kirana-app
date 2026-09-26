@@ -3051,9 +3051,14 @@ async function initApp() {
 
   setupCheckout();
 
-  updateCartCount();
-
+  // Render a starter catalogue immediately so products are visible
+  // even while Supabase is connecting.
+  loadFallbackProducts();
+  renderCategories();
+  renderProducts();
   renderCart();
+
+  updateCartCount();
 
   showHolidayNotice();
 
