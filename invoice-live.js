@@ -55,14 +55,14 @@
     if(!shopkeeperUser || !supabaseClient){
       alert("Please login as shopkeeper first."); return null;
     }
-    const a=await window.supabaseClient.from("orders").select("*").eq("id",orderId).single();
+    const a=await supabaseClient.from("orders").select("*").eq("id",orderId).single();
     if(a.error || !a.data){console.error(a.error);alert("Could not load the order.");return null;}
-    const b=await window.supabaseClient.from("order_items").select("*").eq("order_id",orderId);
+    const b=await supabaseClient.from("order_items").select("*").eq("order_id",orderId);
     if(b.error){console.error(b.error);alert("Could not load invoice items: "+b.error.message);return null;}
     let items=b.data||[];
     const ids=[...new Set(items.map(i=>i.product_id).filter(Boolean))];
     if(ids.length){
-      const p=await window.supabaseClient.from("products").select("id,name").in("id",ids);
+      const p=await supabaseClient.from("products").select("id,name").in("id",ids);
       if(!p.error){
         const names=new Map((p.data||[]).map(x=>[String(x.id),x.name]));
         items=items.map(i=>({...i,product_name:names.get(String(i.product_id))||i.product_name||"Product"}));
