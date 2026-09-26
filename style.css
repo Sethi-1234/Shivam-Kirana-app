@@ -1353,3 +1353,7 @@ main{max-width:1180px;margin:auto;padding:14px 18px 60px}
   #mobileBottomNav button:active{transform:scale(.96)}
   .featureModalBox{max-height:90vh}
 }
+
+
+/* More menu in mobile bottom navigation */
+.moreMenuGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.moreMenuGrid button{padding:13px 10px;border:1px solid #dbe3ef;border-radius:12px;background:#fff;font-weight:800;font-size:14px;cursor:pointer}.moreMenuGrid button:hover{background:#f1f5f9}@media(max-width:600px){body{padding-bottom:76px}.moreMenuGrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
