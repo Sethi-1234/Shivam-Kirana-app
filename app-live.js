@@ -3390,7 +3390,9 @@ async function checkShopkeeperSession() {
   if (!data.session) {
 
     shopkeeperUser = null;
+    customerUser = null;
     updateShopkeeperInterface();
+    updateCustomerInterface();
 
     return;
   }
@@ -3411,14 +3413,15 @@ async function checkShopkeeperSession() {
     profile &&
     profile.role === "shopkeeper"
   ) {
-
-    shopkeeperUser =
-      user;
+    shopkeeperUser = user;
+    customerUser = null;
   } else {
     shopkeeperUser = null;
+    customerUser = user;
   }
 
   updateShopkeeperInterface();
+  updateCustomerInterface();
 }
 
 
