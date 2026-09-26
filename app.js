@@ -518,23 +518,15 @@ async function loadProductsFromDatabase() {
 
   products = (data || []).map(normalizeProduct);
 
+  // If Supabase has no products marked available yet, keep the customer
+  // storefront usable with the built-in starter catalogue.
+  if (!products.length) {
+    loadFallbackProducts();
+  }
+
   renderCategories();
   renderProducts();
   renderShopkeeperProducts();
-
-  if (!products.length) {
-    const el = $("products");
-    if (el) {
-      el.innerHTML = `
-        <div style="grid-column:1/-1;padding:20px;text-align:center;background:#fff;border:1px solid #e5e7eb;border-radius:16px">
-          <h3>No products are available yet.</h3>
-          <p>Shopkeeper can log in and add products from the Shopkeeper panel.</p>
-          <button onclick="openShopkeeperLogin()" class="primary" style="max-width:260px">
-            👨‍💼 Shopkeeper Login
-          </button>
-        </div>`;
-    }
-  }
 }
 
 
