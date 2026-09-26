@@ -1533,8 +1533,8 @@ async function sendOrderToWhatsApp() {
       p_order_type: orderType,
       p_address: orderType === "delivery" ? address : null,
       p_pin_code: orderType === "delivery" ? pin : null,
-      p_latitude: latitude,
-      p_longitude: longitude,
+      p_latitude: customerLocation?.latitude ?? null,
+      p_longitude: customerLocation?.longitude ?? null,
       p_payment_method: payment,
       p_items: rpcItems
     });
