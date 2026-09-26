@@ -846,6 +846,93 @@ function escapeHtml(value) {
 
 
 /* =========================
+   WISHLIST
+========================= */
+
+let wishlist = JSON.parse(localStorage.getItem("shivamWishlist") || "[]");
+
+function saveWishlist() {
+  localStorage.setItem("shivamWishlist", JSON.stringify(wishlist));
+}
+
+function isWishlisted(id) {
+  return wishlist.some(x => String(x) === String(id));
+}
+
+function toggleWishlist(id) {
+  const key = String(id);
+  if (isWishlisted(key)) {
+    wishlist = wishlist.filter(x => String(x) !== key);
+  } else {
+    wishlist.push(key);
+  }
+  saveWishlist();
+  renderProducts();
+  renderWishlistCount();
+}
+
+function renderWishlistCount() {
+  const count = wishlist.length;
+  const el = $("wishlistCount");
+  if (el) el.textContent = count;
+}
+
+function openWishlist() {
+  let panel = $("wishlistPanel");
+  if (!panel) {
+    panel = document.createElement("div");
+    panel.id = "wishlistPanel";
+    panel.className = "wishlist-panel";
+    document.body.appendChild(panel);
+  }
+  const items = wishlist.map(id =>
+    products.find(p => String(p.id) === String(id))
+  ).filter(Boolean);
+
+  panel.innerHTML = `
+    <div class="wishlist-head">
+      <div><h2>❤️ My Wishlist</h2><small>${items.length} saved item(s)</small></div>
+      <button class="wishlist-close" onclick="closeWishlist()">✕</button>
+    </div>
+    <div class="wishlist-items">
+      ${items.length ? items.map(p => `
+        <div class="wishlist-item">
+          <div class="wishlist-product">
+            <div class="wishlist-icon">${p.image_url ? '<img src="'+escapeHtml(p.image_url)+'" alt="'+escapeHtml(p.name)+'">' : (p.emoji || "🛒")}</div>
+            <div><b>${escapeHtml(p.name)}</b><div class="wishlist-price">${money(p.price)}</div></div>
+          </div>
+          <div class="wishlist-actions">
+            <button onclick="addToCart('${String(p.id)}');closeWishlist()">🛒 Add</button>
+            <button onclick="toggleWishlist('${String(p.id)}');openWishlist()">🗑️ Remove</button>
+          </div>
+        </div>
+      `).join("") : '<div class="wishlist-empty">❤️ Your wishlist is empty.<br><small>Tap the heart on any product to save it.</small></div>'}
+    </div>
+  `;
+  panel.classList.add("open");
+  renderWishlistCount();
+}
+
+function closeWishlist() {
+  $("wishlistPanel")?.classList.remove("open");
+}
+
+function showOffers() {
+  alert(`🎁 SHIVAM KIRANA STORE
+
+✨ Save your favourite products in Wishlist
+🚚 FREE delivery
+⚡ Delivery within 30 minutes
+💵 No minimum order
+
+New offers can be added here anytime.`);
+}
+
+function showContact() {
+  window.open("https://wa.me/" + STORE.whatsapp + "?text=" + encodeURIComponent("Hello Shivam Kirana Store, I need help with my order."), "_blank");
+}
+
+/* =========================
    CART
 ========================= */
 
@@ -3196,6 +3283,7 @@ async function initApp() {
   renderCart();
 
   updateCartCount();
+  renderWishlistCount();
 
   showHolidayNotice();
 
