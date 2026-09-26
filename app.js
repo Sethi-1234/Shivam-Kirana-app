@@ -465,7 +465,7 @@ async function loadProductsFromDatabase() {
     return;
   }
 
-  products = data || [];
+  products = (data || []).map(normalizeProduct);
 
   renderCategories();
   renderProducts();
@@ -611,6 +611,7 @@ function loadFallbackProducts() {
 ========================= */
 
 function renderCategories() {
+  products = products.map(normalizeProduct);
 
   const el =
     $("categories");
@@ -658,6 +659,18 @@ function setCategory(cat) {
 /* =========================
    PRODUCT DISPLAY
 ========================= */
+
+function normalizeProduct(product) {
+  return {
+    ...product,
+    name: String(product.name || "Unnamed Product"),
+    price: Number(product.price || 0),
+    category: String(product.category || product.cat || "General"),
+    emoji: String(product.emoji || "🛒"),
+    stock: product.stock == null ? 999 : Number(product.stock),
+    available: product.available !== false
+  };
+}
 
 function renderProducts() {
 
@@ -769,6 +782,16 @@ function escapeHtml(value) {
 ========================= */
 
 function addToCart(id) {
+
+  const product = products.find(p => String(p.id) === String(id));
+  if (!product || product.available === false || Number(product.stock) <= 0) {
+    alert("This product is currently out of stock.");
+    return;
+  }
+  if (Number(cart[id] || 0) >= Number(product.stock)) {
+    alert("You cannot add more than the available stock.");
+    return;
+  }
 
   cart[id] =
     Number(cart[id] || 0) + 1;
@@ -1760,6 +1783,21 @@ function openShopkeeperPanel() {
       >
 
       <input
+        id="productStock"
+        type="number"
+        min="0"
+        step="1"
+        placeholder="Stock quantity (0 = out of stock)"
+        style="
+          width:100%;
+          padding:12px;
+          margin:6px 0;
+          border:1px solid #ddd;
+          border-radius:10px;
+        "
+      >
+
+      <input
         id="productEmoji"
         placeholder="Emoji e.g. 🍚"
         style="
@@ -1889,6 +1927,9 @@ async function saveProduct() {
     $("productCategory")
       ?.value.trim();
 
+  const stock =
+    Math.max(0, Math.floor(Number($("productStock")?.value || 0)));
+
   const emoji =
     $("productEmoji")
       ?.value.trim() ||
@@ -1943,6 +1984,8 @@ async function saveProduct() {
           price,
 
           category,
+
+          stock,
 
           emoji,
 
@@ -2018,6 +2061,9 @@ function cancelProductEdit() {
 
   if ($("productCategory"))
     $("productCategory").value = "";
+
+  if ($("productStock"))
+    $("productStock").value = "";
 
   if ($("productEmoji"))
     $("productEmoji").value = "";
@@ -2156,6 +2202,9 @@ function editProduct(id) {
 
   $("productCategory").value =
     p.category || "";
+
+  $("productStock").value =
+    p.stock == null ? "" : p.stock;
 
   $("productEmoji").value =
     p.emoji || "";
