@@ -2038,6 +2038,10 @@ async function loadShopkeeperOrders() {
                <button onclick="copyShopkeeperTrackingId('${String(order.tracking_code)}')" style="margin-top:7px;padding:7px 10px;border:1px solid #93c5fd;border-radius:8px;background:white;font-weight:800">📋 Copy Tracking ID</button>
              </div>`
           : `<button onclick="generateTrackingIdForOrder('${String(order.id)}')" style="width:100%;padding:10px;margin-top:10px;border:0;border-radius:10px;background:#7c3aed;color:white;font-weight:900">🆔 Generate Tracking ID</button>`}
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+          <button onclick="generateInvoice('${String(order.id)}')" style="flex:1;min-width:150px;padding:10px;border:0;border-radius:10px;background:#111827;color:white;font-weight:900">🧾 Invoice</button>
+          ${status === "out_for_delivery" ? `<button onclick="sendInvoiceWhatsApp('${String(order.id)}')" style="flex:1;min-width:180px;padding:10px;border:0;border-radius:10px;background:#16a34a;color:white;font-weight:900">📲 Send Invoice WhatsApp</button>` : ""}
+        </div>
       </div>`;
   }).join("");
 }
@@ -2048,17 +2052,8 @@ async function generateTrackingIdForOrder(orderId) {
     return;
   }
 
-  const bytes = crypto.getRandomValues(new Uint32Array(2));
-  const generatedCode =
-    "SK-" +
-    new Date().toISOString().slice(0, 10).replace(/-/g, "") +
-    "-" +
-    Array.from(bytes).map(n => n.toString(36)).join("").slice(0, 10).toUpperCase();
-
-  const { error } = await supabaseClient
-    .from("orders")
-    .update({ tracking_code: generatedCode })
-    .eq("id", orderId);
+  const { data, error } = await supabaseClient
+    .rpc("generate_order_tracking_code", { p_order_id: orderId });
 
   if (error) {
     console.error("Tracking ID generation failed:", error);
@@ -2066,10 +2061,15 @@ async function generateTrackingIdForOrder(orderId) {
     return;
   }
 
+  const generatedCode = Array.isArray(data) ? data[0] : data;
+  if (!generatedCode) {
+    alert("Could not generate a tracking ID.");
+    return;
+  }
+
   alert("✅ Tracking ID generated:\n\n" + generatedCode);
   await loadShopkeeperOrders();
 }
-
 
 function copyShopkeeperTrackingId(code) {
   const clean = String(code || "").trim();
