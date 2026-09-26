@@ -457,20 +457,33 @@ async function loadProductsFromDatabase() {
 
     console.error(error);
 
-    alert(
-      "Products could not be loaded from database."
-    );
-
+    console.error("Products could not be loaded from database:", error);
+    loadFallbackProducts();
+    renderCategories();
+    renderProducts();
+    renderShopkeeperProducts();
     return;
   }
 
   products = data || [];
 
   renderCategories();
-
   renderProducts();
-
   renderShopkeeperProducts();
+
+  if (!products.length) {
+    const el = $("products");
+    if (el) {
+      el.innerHTML = `
+        <div style="grid-column:1/-1;padding:20px;text-align:center;background:#fff;border:1px solid #e5e7eb;border-radius:16px">
+          <h3>No products are available yet.</h3>
+          <p>Shopkeeper can log in and add products from the Shopkeeper panel.</p>
+          <button onclick="openShopkeeperLogin()" class="primary" style="max-width:260px">
+            👨‍💼 Shopkeeper Login
+          </button>
+        </div>`;
+    }
+  }
 }
 
 
@@ -897,209 +910,7 @@ function closeCart() {
 ========================= */
 
 function setupCheckout() {
-
-  const checkout =
-    $("checkout");
-
-  if (!checkout) return;
-
-  const box =
-    checkout.querySelector(".modalBox");
-
-  if (!box) return;
-
-  if ($("advancedCheckout")) return;
-
-  const sendButton =
-    $("sendOrder");
-
-  const extra =
-    document.createElement("div");
-
-  extra.id =
-    "advancedCheckout";
-
-  extra.innerHTML = `
-
-    <h3>Order Type</h3>
-
-    <label style="
-      display:block;
-      padding:15px;
-      border:1px solid #ddd;
-      border-radius:12px;
-      margin:8px 0;
-    ">
-
-      <input
-        type="radio"
-        name="orderType"
-        value="delivery"
-        checked
-        onchange="updateCheckoutType()">
-
-      🚚 Home Delivery
-
-    </label>
-
-    <label style="
-      display:block;
-      padding:15px;
-      border:1px solid #ddd;
-      border-radius:12px;
-      margin:8px 0;
-    ">
-
-      <input
-        type="radio"
-        name="orderType"
-        value="pickup"
-        onchange="updateCheckoutType()">
-
-      🏪 Store Pickup
-
-    </label>
-
-    <div id="deliveryFields">
-
-      <textarea
-        id="orderAddress"
-        placeholder="Delivery address"
-        style="
-          width:100%;
-          padding:12px;
-          margin:7px 0;
-          border:1px solid #ddd;
-          border-radius:10px;
-          font:inherit;
-        "></textarea>
-
-      <input
-        id="orderPin"
-        placeholder="Delivery PIN code"
-        inputmode="numeric"
-        style="
-          width:100%;
-          padding:12px;
-          margin:7px 0;
-          border:1px solid #ddd;
-          border-radius:10px;
-          font:inherit;
-        ">
-
-      <button
-        type="button"
-        onclick="checkDeliveryArea()"
-        style="
-          width:100%;
-          padding:12px;
-          margin:7px 0;
-          border:0;
-          border-radius:10px;
-          background:#0f766e;
-          color:white;
-          font-weight:700;
-        ">
-
-        📍 Check Delivery Area
-
-      </button>
-
-      <button
-        type="button"
-        onclick="getCustomerLocation()"
-        style="
-          width:100%;
-          padding:12px;
-          margin:7px 0;
-          border:0;
-          border-radius:10px;
-          background:#2563eb;
-          color:white;
-          font-weight:700;
-        ">
-
-        📍 Use My Location
-
-      </button>
-
-      <p
-        id="locationStatus"
-        style="
-          font-size:13px;
-          color:#475569;
-        ">
-
-        Location not added
-
-      </p>
-
-    </div>
-
-    <h3>Payment</h3>
-
-    <select
-      id="paymentMethod"
-      onchange="updatePaymentInfo()"
-      style="
-        width:100%;
-        padding:12px;
-        border:1px solid #ddd;
-        border-radius:10px;
-        font:inherit;
-      ">
-
-      <option value="upi">
-        💳 UPI
-      </option>
-
-      <option value="cod">
-        💵 Cash on Delivery
-      </option>
-
-      <option value="store">
-        🏪 Pay at Store
-      </option>
-
-    </select>
-
-    <div
-      id="paymentInfo"
-      style="
-        margin-top:10px;
-        padding:14px;
-        background:#f0fdf4;
-        border-radius:12px;
-      ">
-
-    </div>
-
-    <button
-      type="button"
-      onclick="payByUPI()"
-      id="upiButton"
-      style="
-        width:100%;
-        padding:12px;
-        margin-top:8px;
-        border:0;
-        border-radius:10px;
-        background:#16a34a;
-        color:white;
-        font-weight:700;
-      ">
-
-      💳 Pay by UPI
-
-    </button>
-
-  `;
-
-  box.insertBefore(
-    extra,
-    sendButton
-  );
-
+  updateCheckoutType();
   updatePaymentInfo();
 }
 
