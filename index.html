@@ -91,6 +91,10 @@
       ❓ Help
     </button>
 
+    <button onclick="openShopkeeperLogin()">
+      👨‍💼 Shopkeeper
+    </button>
+
     <button onclick="openWhatsApp()">
       💬 WhatsApp
     </button>
@@ -213,7 +217,7 @@
           name="orderType"
           value="delivery"
           checked
-          onchange="updateOrderType()">
+          onchange="updateCheckoutType()">
 
         🚚 Home Delivery
 
@@ -238,13 +242,13 @@
     <div id="deliveryFields">
 
       <textarea
-        id="address"
+        id="orderAddress"
         placeholder="Delivery address">
       </textarea>
 
 
       <input
-        id="pin"
+        id="orderPin"
         placeholder="Delivery PIN code"
         inputmode="numeric"
         maxlength="6">
@@ -253,7 +257,7 @@
       <button
         type="button"
         class="secondaryButton"
-        onclick="checkDeliveryPin()">
+        onclick="checkDeliveryArea()">
 
         📍 Check Delivery Area
 
@@ -287,7 +291,7 @@
     <h3>Payment</h3>
 
     <select id="paymentMethod"
-            onchange="updatePayment()">
+            onchange="updatePaymentInfo()">
 
       <option value="upi">
         💳 UPI
@@ -305,7 +309,7 @@
 
 
     <div
-      id="upiBox"
+      id="paymentInfo"
       class="upiBox">
 
       <b>UPI ID</b>
