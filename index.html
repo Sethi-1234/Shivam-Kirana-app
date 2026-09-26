@@ -32,9 +32,15 @@
     </div>
   </div>
 
-  <button id="cartBtn" class="cart">
-    🛒 Cart <b id="cartCount">0</b>
-  </button>
+  <div class="headerActions">
+    <button id="customerLoginButton" class="customerLoginButton" type="button" onclick="openCustomerLogin()">
+      👤 Login
+    </button>
+
+    <button id="cartBtn" class="cart" type="button">
+      🛒 Cart <b id="cartCount">0</b>
+    </button>
+  </div>
     
 </header>
 
@@ -69,6 +75,10 @@
 
 
   <section class="quick-actions" id="quickActions">
+
+    <button id="customerLoginQuickAction" onclick="openCustomerLogin()">
+      👤 Customer Login
+    </button>
 
     <button onclick="openCart()">
       🛒 Order Now
