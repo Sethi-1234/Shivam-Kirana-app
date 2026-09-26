@@ -74,6 +74,56 @@ let customerUser = null;
 let trackingChannel = null;
 let trackingCodeActive = null;
 let deliveryWatchId = null;
+
+let storeSettings = {
+  deliveryHours: STORE.deliveryHours,
+  storeHours: STORE.storeHours,
+  deliveryTime: STORE.deliveryTime,
+  storeOpen: true,
+  deliveryOpen: true
+};
+
+async function loadStoreSettings() {
+  if (!supabaseClient) return;
+  const { data, error } = await supabaseClient.from("store_settings").select("*").eq("id", 1).maybeSingle();
+  if (!error && data) {
+    storeSettings = { ...storeSettings, ...data };
+    STORE.deliveryHours = data.delivery_hours || STORE.deliveryHours;
+    STORE.storeHours = data.store_hours || STORE.storeHours;
+    STORE.deliveryTime = data.delivery_time || STORE.deliveryTime;
+  }
+  updateStoreStatusUI();
+}
+
+async function saveStoreSettings() {
+  if (!shopkeeperUser || !supabaseClient) { alert("Please login as shopkeeper."); return; }
+  const payload = {
+    id: 1,
+    delivery_hours: $("settingsDeliveryHours")?.value.trim() || STORE.deliveryHours,
+    store_hours: $("settingsStoreHours")?.value.trim() || STORE.storeHours,
+    delivery_time: $("settingsDeliveryTime")?.value.trim() || STORE.deliveryTime,
+    store_open: $("settingsStoreOpen")?.checked !== false,
+    delivery_open: $("settingsDeliveryOpen")?.checked !== false
+  };
+  const { error } = await supabaseClient.from("store_settings").upsert(payload, { onConflict: "id" });
+  if (error) {
+    alert("Could not save store settings. Run the store settings SQL setup first.\\n\\n" + error.message);
+    return;
+  }
+  storeSettings = { ...storeSettings, ...payload };
+  STORE.deliveryHours = payload.delivery_hours;
+  STORE.storeHours = payload.store_hours;
+  STORE.deliveryTime = payload.delivery_time;
+  alert("✅ Store settings updated.");
+  updateStoreStatusUI();
+}
+
+function updateStoreStatusUI() {
+  const status = $("storeStatusText");
+  const delivery = $("deliveryStatusText");
+  if (status) status.textContent = storeSettings.store_open ? "🟢 Store Open • " + STORE.storeHours : "🔴 Store Closed";
+  if (delivery) delivery.textContent = storeSettings.delivery_open ? "🚚 Delivery " + STORE.deliveryHours : "🚫 Delivery Closed";
+}
 let deliveryTrackingOrderId = null;
 let deliveryTrackingCode = null;
 let lastDeliveryLocationUpdate = 0;
@@ -2724,6 +2774,20 @@ function openShopkeeperPanel() {
         </div>
       </div>
 
+      <div style="margin:12px 0;padding:14px;border:1px solid #dbeafe;border-radius:14px;background:#f8fbff">
+        <h3 style="margin:0 0 8px">⚙️ Store Hours & Status</h3>
+        <p style="font-size:13px;color:#64748b;margin:0 0 8px">Change opening/closing times and turn store or delivery on/off.</p>
+        <label style="display:block;font-weight:700;margin:7px 0">🏪 Store hours</label>
+        <input id="settingsStoreHours" value="__STORE_HOURS__" placeholder="9 AM - 8 PM" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:9px;box-sizing:border-box">
+        <label style="display:block;font-weight:700;margin:7px 0">🚚 Delivery hours</label>
+        <input id="settingsDeliveryHours" value="__DELIVERY_HOURS__" placeholder="10 AM - 7 PM" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:9px;box-sizing:border-box">
+        <label style="display:block;font-weight:700;margin:7px 0">⏱️ Delivery time</label>
+        <input id="settingsDeliveryTime" value="__DELIVERY_TIME__" placeholder="30 minutes" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:9px;box-sizing:border-box">
+        <label style="display:block;margin:10px 0"><input id="settingsStoreOpen" type="checkbox" __STORE_CHECK__> 🟢 Store is open</label>
+        <label style="display:block;margin:10px 0"><input id="settingsDeliveryOpen" type="checkbox" __DELIVERY_CHECK__> 🚚 Delivery is available</label>
+        <button type="button" onclick="saveStoreSettings()" style="width:100%;padding:11px;border:0;border-radius:10px;background:#2563eb;color:white;font-weight:900">💾 Save Store Settings</button>
+      </div>
+
       <button
         type="button"
         onclick="loadProductsFromDatabase();loadShopkeeperOrders();"
@@ -3615,7 +3679,7 @@ async function initApp() {
 
   try {
 
-    await loadSupabase();
+    await loadSupabase();\n\n    await loadStoreSettings();
 
     await checkShopkeeperSession();
 
