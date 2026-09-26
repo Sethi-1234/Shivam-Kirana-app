@@ -1,9 +1,6 @@
 /* SHIVAM KIRANA STORE - COMPLETE APP.JS v3
-   Added secure order tracking, status confirmation, and live delivery GPS.
-*/
-/* Original header follows. */
-
-   Fixed shopkeeper auth/session handling, product stock saving,
+   Added secure order tracking, status confirmation, live delivery GPS,
+   and fixed shopkeeper auth/session handling, product stock saving,
    cart stock limits, and UPI payment button rendering.
 */
 /* =========================================================
